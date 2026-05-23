@@ -74,7 +74,11 @@ export function useEscrow({ address, bookingId, roomId, reservationStage, refres
       await Promise.all([
         refreshBooking(bookingId),
         roomId
-          ? updateListingAvailability(roomId, listingAvailabilityAfter).catch(() => undefined)
+          ? updateListingAvailability(
+              roomId,
+              listingAvailabilityAfter,
+              listingAvailabilityAfter === "Reserved" ? undefined : "",
+            ).catch(() => undefined)
           : Promise.resolve(),
       ]);
     } catch (error) {
@@ -109,8 +113,8 @@ export function useEscrow({ address, bookingId, roomId, reservationStage, refres
       "checkout",
       "checkout",
       "Preparing stay completion...",
-      "Stay completed. Protected settlement is being released.",
-      "Completed",
+      "Stay completed. Protected settlement has been released and the listing is available again.",
+      "Available",
     );
   }
 
