@@ -55,6 +55,14 @@ export function useBooking({ address }: UseBookingOptions) {
     try {
       const result = await getBookingTransaction(address, nextBookingId);
       setResponse(result);
+
+      const refreshedRecord = asBookingRecord(parseJson(result)?.value ?? parseJson(result));
+      const refreshedStage = reservationStageFromStatus(getBookingStatusValue(refreshedRecord));
+      const refreshedRoomId = pickBookingField(refreshedRecord, ["room_id", "roomId", "room"]);
+      if (refreshedStage === "Completed" && refreshedRoomId !== undefined && refreshedRoomId !== null) {
+        updateListingAvailability(String(refreshedRoomId), "Available", "").catch(() => undefined);
+      }
+
       return result;
     } catch (error) {
       setResponse(showError(error));

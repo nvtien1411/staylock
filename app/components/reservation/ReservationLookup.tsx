@@ -229,7 +229,7 @@ export function ReservationLookup({
                     </div>
                     <div className="flex items-start justify-between gap-4">
                       <span className="text-stone-500">Network</span>
-                      <span className="text-stone-300">Stellar Testnet</span>
+                      <span className="text-stone-300">Stellar Mainnet</span>
                     </div>
                   </div>
                 )}

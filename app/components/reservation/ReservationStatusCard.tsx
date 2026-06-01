@@ -94,7 +94,7 @@ export function ReservationStatusCard({ liveTone, createResult, createStatus, bo
               </div>
               <div className="flex items-start justify-between gap-4">
                 <span className="text-stone-500">Network</span>
-                <span className="text-stone-300">Stellar Testnet</span>
+                <span className="text-stone-300">Stellar Mainnet</span>
               </div>
               {explorerUrl && (
                 <a href={explorerUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex rounded-full border border-white/10 px-3 py-1.5 text-stone-300 transition hover:bg-white/[0.06]">

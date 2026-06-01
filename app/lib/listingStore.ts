@@ -28,9 +28,59 @@ type ListingRow = {
 
 let _listings: Listing[] = [...MOCK_LISTINGS];
 const _subscribers = new Set<() => void>();
+const LOCAL_STORAGE_KEY = "staylock_custom_listings";
 
 function notify() {
   _subscribers.forEach((cb) => cb());
+}
+
+function getLocalListings(): Listing[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const data = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    console.error("Failed to read custom listings from localStorage", e);
+    return [];
+  }
+}
+
+function saveLocalListing(listing: Listing) {
+  if (typeof window === "undefined") return;
+  try {
+    const local = getLocalListings();
+    const updated = [listing, ...local.filter((item) => item.id !== listing.id)];
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.error("Failed to save custom listing to localStorage", e);
+  }
+}
+
+function updateLocalListingAvailability(roomId: string, availability: Listing["availability"], bookingId?: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const local = getLocalListings();
+    const updated = local.map((l) =>
+      l.roomId === roomId
+        ? { ...l, availability, ...(bookingId !== undefined ? { activeBookingId: bookingId || undefined } : {}) }
+        : l
+    );
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.error("Failed to update custom listing availability in localStorage", e);
+  }
+}
+
+function loadLocalFallback() {
+  const localListings = getLocalListings();
+  const merged = [...localListings];
+  MOCK_LISTINGS.forEach((mock) => {
+    if (!merged.some((item) => item.id === mock.id)) {
+      merged.push(mock);
+    }
+  });
+  _listings = merged;
+  notify();
 }
 
 function toListing(row: ListingRow): Listing {
@@ -84,29 +134,56 @@ export function getListings(): Listing[] {
 }
 
 async function fetchListings() {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase
-    .from("listings")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from("listings")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    // Table missing or RLS blocking — keep showing mock listings so the UI stays functional
-    console.warn("Supabase listings fetch failed:", error.message);
-    return;
+    if (error) {
+      console.warn("Supabase listings fetch failed:", error.message);
+      loadLocalFallback();
+      return;
+    }
+
+    const remoteListings = (data as ListingRow[] | null)?.map(toListing) ?? [];
+    const localListings = getLocalListings();
+
+    const merged = [...remoteListings];
+    localListings.forEach((local) => {
+      if (!merged.some((item) => item.id === local.id)) {
+        merged.push(local);
+      }
+    });
+
+    MOCK_LISTINGS.forEach((mock) => {
+      if (!merged.some((item) => item.id === mock.id)) {
+        merged.push(mock);
+      }
+    });
+
+    _listings = merged;
+    notify();
+  } catch (err) {
+    console.warn("Failed to fetch listings from Supabase, loading local fallback:", err);
+    loadLocalFallback();
   }
-
-  _listings = (data as ListingRow[] | null)?.map(toListing) ?? [];
-  notify();
 }
 
 export async function addListing(listing: Listing) {
-  const supabase = getSupabaseClient();
-  const { error } = await supabase.from("listings").insert(toRow(listing));
+  // Always save locally first for resilience
+  saveLocalListing(listing);
 
-  if (error) {
-    console.warn("Supabase insert failed:", error.message);
-    throw error;
+  try {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.from("listings").insert(toRow(listing));
+
+    if (error) {
+      console.warn("Supabase insert failed, custom listing saved locally:", error.message);
+    }
+  } catch (err) {
+    console.warn("Supabase connection failed, custom listing saved locally:", err);
   }
 
   _listings = [listing, ..._listings.filter((item) => item.id !== listing.id)];
@@ -118,16 +195,25 @@ export async function updateListingAvailability(
   availability: Listing["availability"],
   bookingId?: string,
 ) {
-  const supabase = getSupabaseClient();
-  const patch: Record<string, unknown> = { availability };
-  if (bookingId !== undefined) patch.active_booking_id = bookingId || null;
+  // Always update locally first for resilience
+  updateLocalListingAvailability(roomId, availability, bookingId);
 
-  const { error } = await supabase
-    .from("listings")
-    .update(patch)
-    .eq("room_id", roomId);
+  try {
+    const supabase = getSupabaseClient();
+    const patch: Record<string, unknown> = { availability };
+    if (bookingId !== undefined) patch.active_booking_id = bookingId || null;
 
-  if (error) throw error;
+    const { error } = await supabase
+      .from("listings")
+      .update(patch)
+      .eq("room_id", roomId);
+
+    if (error) {
+      console.warn("Supabase update failed, availability updated locally:", error.message);
+    }
+  } catch (err) {
+    console.warn("Supabase connection failed, availability updated locally:", err);
+  }
 
   _listings = _listings.map((l) =>
     l.roomId === roomId
@@ -148,24 +234,44 @@ export function useListings(): Listing[] {
   useEffect(() => {
     const unsubscribe = subscribe(() => setListings(getListings()));
 
+    // Synchronously load any localStorage listings on client-side to prevent flash of empty workspace
+    const local = getLocalListings();
+    if (local.length > 0) {
+      const merged = [...local];
+      MOCK_LISTINGS.forEach((mock) => {
+        if (!merged.some((item) => item.id === mock.id)) {
+          merged.push(mock);
+        }
+      });
+      _listings = merged;
+      setListings(merged);
+    }
+
     fetchListings().catch((error) => {
       console.error("Failed to load listings from Supabase", error);
     });
 
-    const supabase = getSupabaseClient();
-    const channel = supabase
-      .channel("staylock-listings")
-      .on("postgres_changes", { event: "*", schema: "public", table: "listings" }, () => {
-        fetchListings().catch((error) => {
-          console.error("Failed to refresh listings from Supabase", error);
-        });
-      })
-      .subscribe();
+    try {
+      const supabase = getSupabaseClient();
+      const channel = supabase
+        .channel("staylock-listings")
+        .on("postgres_changes", { event: "*", schema: "public", table: "listings" }, () => {
+          fetchListings().catch((error) => {
+            console.error("Failed to refresh listings from Supabase", error);
+          });
+        })
+        .subscribe();
 
-    return () => {
-      unsubscribe();
-      void supabase.removeChannel(channel);
-    };
+      return () => {
+        unsubscribe();
+        void supabase.removeChannel(channel);
+      };
+    } catch (err) {
+      console.warn("Failed to subscribe to Supabase realtime channel:", err);
+      return () => {
+        unsubscribe();
+      };
+    }
   }, []);
 
   return listings;

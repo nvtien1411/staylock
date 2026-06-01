@@ -12,7 +12,7 @@ export function WalletStatus({ address, onConnect }: WalletStatusProps) {
   return (
     <div className="flex items-center gap-2 sm:gap-3">
       <span className="hidden rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs font-semibold text-emerald-100 sm:inline-flex">
-        Testnet
+        Mainnet
       </span>
       <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-xs text-stone-200 sm:text-sm">
         <span className={`h-2 w-2 rounded-full ${address ? "bg-emerald-300 shadow-lg shadow-emerald-300/70" : "bg-stone-500"}`} />

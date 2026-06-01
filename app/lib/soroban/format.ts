@@ -39,7 +39,7 @@ export function parseJson(value: string) {
 }
 
 export function getExplorerUrl(hash: unknown) {
-  return typeof hash === "string" && hash ? `https://stellar.expert/explorer/testnet/tx/${hash}` : "";
+  return typeof hash === "string" && hash ? `https://stellar.expert/explorer/public/tx/${hash}` : "";
 }
 
 export function statusMessage(result: Record<string, unknown> | null, fallback: string) {

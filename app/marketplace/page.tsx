@@ -46,7 +46,7 @@ export default function MarketplacePage() {
         if (booking.reservationStage === "Reserved" || booking.reservationStage === "Checked In") {
           availability = "Reserved";
         } else if (booking.reservationStage === "Completed") {
-          availability = "Completed";
+          availability = "Available";
         }
         return { ...listing, availability };
       }
