@@ -14,7 +14,7 @@ type UseBookingOptions = {
 
 export function useBooking({ address }: UseBookingOptions) {
   const [bookingId, setBookingId] = useState("");
-  const [response, setResponse] = useState("Enter a reservation code to view the latest stay details.");
+  const [response, setResponse] = useState("Nhập mã đặt phòng để tra cứu dữ liệu mới nhất từ sổ cái.");
   const [isLoading, setIsLoading] = useState(false);
   const [traveler, setTraveler] = useState("");
   const [host, setHost] = useState("");
@@ -22,7 +22,7 @@ export function useBooking({ address }: UseBookingOptions) {
   const [amount, setAmount] = useState("");
   const [dayCheckin, setDayCheckin] = useState("");
   const [dayCheckout, setDayCheckout] = useState("");
-  const [createStatus, setCreateStatus] = useState("Complete the reservation details to secure a stay.");
+  const [createStatus, setCreateStatus] = useState("Hoàn tất thông tin đặt phòng để khóa ký quỹ an toàn.");
   const [isCreating, setIsCreating] = useState(false);
 
   const createResult = useMemo(() => parseJson(createStatus), [createStatus]);
@@ -39,30 +39,22 @@ export function useBooking({ address }: UseBookingOptions) {
 
   async function refreshBooking(nextBookingId = bookingId) {
     if (!address) {
-      setResponse("Connect your wallet first.");
+      setResponse("Vui lòng kết nối ví Freighter trước.");
       return null;
     }
 
     if (!nextBookingId) {
-      setResponse("Enter a reservation code first.");
+      setResponse("Vui lòng nhập mã đặt phòng trước.");
       return null;
     }
 
     setIsLoading(true);
     setBookingId(nextBookingId);
-    setResponse("Loading reservation...");
+    setResponse("Đang truy vấn dữ liệu từ sổ cái Stellar...");
 
     try {
       const result = await getBookingTransaction(address, nextBookingId);
       setResponse(result);
-
-      const refreshedRecord = asBookingRecord(parseJson(result)?.value ?? parseJson(result));
-      const refreshedStage = reservationStageFromStatus(getBookingStatusValue(refreshedRecord));
-      const refreshedRoomId = pickBookingField(refreshedRecord, ["room_id", "roomId", "room"]);
-      if (refreshedStage === "Completed" && refreshedRoomId !== undefined && refreshedRoomId !== null) {
-        updateListingAvailability(String(refreshedRoomId), "Available", "").catch(() => undefined);
-      }
-
       return result;
     } catch (error) {
       setResponse(showError(error));
@@ -78,20 +70,20 @@ export function useBooking({ address }: UseBookingOptions) {
 
   async function createBooking() {
     if (!address) {
-      setCreateStatus("Connect your wallet first.");
+      setCreateStatus("Vui lòng kết nối ví Freighter trước.");
       return;
     }
 
     if (!traveler || !host || !roomId || !amount || !dayCheckin || !dayCheckout) {
-      setCreateStatus("Fill all reservation fields first.");
+      setCreateStatus("Vui lòng điền đầy đủ tất cả các trường đặt phòng.");
       return;
     }
 
     setIsCreating(true);
-    setCreateStatus("Preparing secure reservation...");
+    setCreateStatus("Đang chuẩn bị giao dịch ký quỹ...");
 
     try {
-      setCreateStatus("Waiting for wallet approval...");
+      setCreateStatus("Đang chờ bạn phê duyệt chữ ký ví Freighter...");
       const sendResult = await createBookingTransaction(address, {
         traveler,
         host,
@@ -101,7 +93,7 @@ export function useBooking({ address }: UseBookingOptions) {
         dayCheckout,
       } satisfies BookingInput);
 
-      setCreateStatus("Finalizing reservation...");
+      setCreateStatus("Đang đồng thuận trên sổ cái Stellar...");
 
       if (sendResult.status === "ERROR") {
         setCreateStatus(JSON.stringify(toJsonSafe(sendResult), null, 2));
@@ -121,8 +113,8 @@ export function useBooking({ address }: UseBookingOptions) {
           toJsonSafe({
             success: true,
             message: createdBookingId
-              ? "Your stay has been reserved. Track the reservation to review the latest protected state."
-              : "Your stay has been reserved and the escrow is being secured.",
+              ? "Kỳ nghỉ của bạn đã được đặt thành công. Tiền cọc đã được khóa ký quỹ an toàn trên hợp đồng Soroban."
+              : "Kỳ nghỉ đã được đặt và khoản ký quỹ đang được bảo chứng an toàn.",
             bookingId: createdBookingId,
             transactionHash: sendResult.hash,
             status: sendResult.status,
@@ -154,7 +146,7 @@ export function useBooking({ address }: UseBookingOptions) {
     dayCheckout: string;
   }) {
     if (!address) {
-      setCreateStatus("Connect your wallet first.");
+      setCreateStatus("Vui lòng kết nối ví Freighter trước.");
       return;
     }
 
@@ -166,10 +158,10 @@ export function useBooking({ address }: UseBookingOptions) {
     setDayCheckout(params.dayCheckout);
 
     setIsCreating(true);
-    setCreateStatus("Preparing secure reservation...");
+    setCreateStatus("Đang chuẩn bị giao dịch ký quỹ...");
 
     try {
-      setCreateStatus("Waiting for wallet approval...");
+      setCreateStatus("Đang chờ bạn phê duyệt chữ ký ví Freighter...");
       const sendResult = await createBookingTransaction(address, {
         traveler: address,
         host: params.host,
@@ -179,7 +171,7 @@ export function useBooking({ address }: UseBookingOptions) {
         dayCheckout: params.dayCheckout,
       } satisfies BookingInput);
 
-      setCreateStatus("Finalizing reservation...");
+      setCreateStatus("Đang đồng thuận trên sổ cái Stellar...");
 
       if (sendResult.status === "ERROR") {
         setCreateStatus(JSON.stringify(toJsonSafe(sendResult), null, 2));
@@ -199,8 +191,8 @@ export function useBooking({ address }: UseBookingOptions) {
           toJsonSafe({
             success: true,
             message: createdBookingId
-              ? "Your stay has been reserved. Track the reservation to review the latest protected state."
-              : "Your stay has been reserved and the escrow is being secured.",
+              ? "Kỳ nghỉ của bạn đã được đặt thành công. Tiền cọc đã được khóa ký quỹ an toàn trên hợp đồng Soroban."
+              : "Kỳ nghỉ đã được đặt và khoản ký quỹ đang được bảo chứng an toàn.",
             bookingId: createdBookingId,
             transactionHash: sendResult.hash,
             status: sendResult.status,

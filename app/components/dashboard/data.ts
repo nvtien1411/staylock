@@ -1,23 +1,35 @@
 import type { ReservationStage } from "@/app/types/booking";
 
 export const metrics = [
-  ["$2.8M", "Escrow Volume"],
-  ["12.4K", "Reservations"],
-  ["840+", "Active Properties"],
-  ["99.98%", "Settlement Reliability"],
+  ["2.8M+ XLM", "Tổng giá trị ký quỹ"],
+  ["12.4K", "Lượt đặt phòng an toàn"],
+  ["850+", "Biệt thự & chỗ nghỉ cao cấp"],
+  ["99.98%", "Tỷ lệ quyết toán chính xác"],
 ];
 
 export const activity = [
-  ["Reservation secured", "Ocean villa · 2 min ago", "+$1,240 locked"],
-  ["Settlement released", "Kyoto loft · 8 min ago", "Check-in verified"],
-  ["Guest wallet verified", "Lisbon townhouse · 14 min ago", "Freighter approved"],
-  ["Property owner onboarded", "Alpine chalet · 22 min ago", "Ready for escrow"],
+  ["Khóa cọc ký quỹ thành công", "Biệt thự biển Đà Nẵng · 2 phút trước", "+12.5 XLM đã khóa"],
+  ["Giải ngân tiền phòng", "Căn hộ Hội An · 8 phút trước", "Đã xác nhận check-in"],
+  ["Xác thực ví khách du lịch", "Townhouse Phố Cổ · 14 phút trước", "Chữ ký Freighter hợp lệ"],
+  ["Chủ nhà mới gia nhập", "Chalet Mây Sa Pa · 22 phút trước", "Đã sẵn sàng nhận khách"],
 ];
 
 export const escrowSteps = [
-  ["01", "Funds locked securely", "Your deposit is held in escrow the moment you reserve, creating confidence for both guest and owner."],
-  ["02", "Verified check-in", "Release conditions are transparent, reducing disputes before the stay begins."],
-  ["03", "Trustless settlement", "The reservation settles without middlemen, delays, or opaque back-office processes."],
+  [
+    "01",
+    "Khóa tiền cọc an toàn",
+    "Tiền cọc của bạn được hợp đồng thông minh Soroban khóa an toàn ngay khi đặt phòng, bảo vệ quyền lợi cả khách và chủ nhà.",
+  ],
+  [
+    "02",
+    "Xác nhận nhận phòng tức thì",
+    "Điều kiện giải ngân minh bạch tuyệt đối trên sổ cái, loại bỏ hoàn toàn tranh chấp trước khi kỳ nghỉ bắt đầu.",
+  ],
+  [
+    "03",
+    "Quyết toán không trung gian",
+    "Hệ thống tự động chuyển tiền trực tiếp cho chủ nhà khi hoàn tất kỳ nghỉ, không phí ẩn và không giam tiền.",
+  ],
 ];
 
 export const lifecycleStages: Array<{
@@ -27,22 +39,22 @@ export const lifecycleStages: Array<{
 }> = [
   {
     stage: "Reserved",
-    title: "Deposit protected",
-    description: "The stay is reserved and escrow protection is active.",
+    title: "Tiền cọc đã được bảo vệ",
+    description: "Phòng đã được đặt và cơ chế ký quỹ Soroban đang hoạt động an toàn.",
   },
   {
     stage: "Checked In",
-    title: "Stay verified",
-    description: "Check-in confirms the guest has arrived and the trip is underway.",
+    title: "Xác thực nhận phòng thành công",
+    description: "Xác nhận khách đã đến nơi an toàn và chuyến đi đang diễn ra.",
   },
   {
     stage: "Completed",
-    title: "Settlement released",
-    description: "Checkout completes the stay and releases the protected settlement.",
+    title: "Quyết toán giải ngân hoàn tất",
+    description: "Trả phòng hoàn tất kỳ nghỉ và giải phóng tiền thanh toán cho chủ nhà.",
   },
   {
     stage: "Cancelled",
-    title: "Reservation closed",
-    description: "Cancellation closes the stay path and prevents further progression.",
+    title: "Hủy đặt phòng & hoàn cọc",
+    description: "Kỳ nghỉ đã đóng và tiền cọc được hoàn trả lại ví theo quy định hợp đồng.",
   },
 ];

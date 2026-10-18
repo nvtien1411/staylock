@@ -1,3 +1,5 @@
-export const inputClass = "w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white placeholder:text-stone-500 outline-none transition focus:border-amber-200/40 focus:bg-white/[0.07] focus:ring-2 focus:ring-amber-200/10";
+export const inputClass =
+  "w-full rounded-xl border border-white/[0.09] bg-white/[0.035] px-4 py-3 text-sm text-stone-100 placeholder:text-stone-500 outline-none transition-all duration-200 focus:border-amber-400/50 focus:bg-white/[0.06] focus:ring-4 focus:ring-amber-400/10 hover:border-white/[0.16]";
 
-export const glassCard = "rounded-2xl border border-white/10 bg-white/[0.06] shadow-lg shadow-black/20 backdrop-blur-xl";
+export const glassCard =
+  "rounded-2xl border border-white/[0.08] bg-[#0c0e15]/75 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-2xl";

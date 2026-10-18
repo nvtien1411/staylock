@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DEMO_HOST_WALLET, MOCK_LISTINGS } from "@/app/lib/listings";
+import {
+  DEMO_HOST_WALLET,
+  MOCK_LISTINGS,
+  SAMPLE_STAY_IMAGES,
+  DEFAULT_FALLBACK_IMAGE,
+  getStableSampleImage,
+} from "@/app/lib/listings";
 import { getSupabaseClient } from "@/app/lib/supabase/client";
 import type { Listing } from "@/app/types/listing";
 
@@ -24,69 +30,69 @@ type ListingRow = {
   active_booking_id: string | null;
   gradient_from: string;
   gradient_to: string;
+  image_url?: string | null;
 };
 
+const STORAGE_KEY = "staylock_custom_listings_v1";
+
+function loadStoredListings(): Listing[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) => ({
+        ...item,
+        imageUrl: item.imageUrl || getStableSampleImage(item.roomId || item.id),
+      }));
+    }
+  } catch (e) {
+    console.warn("Failed to parse custom listings from storage", e);
+  }
+  return [];
+}
+
+function saveStoredListings(listings: Listing[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(listings));
+  } catch (e) {
+    console.warn("Failed to save custom listings to storage", e);
+  }
+}
+
+// Khởi tạo danh sách kết hợp mock và danh sách do host tạo
 let _listings: Listing[] = [...MOCK_LISTINGS];
+let _initialized = false;
+let _isHydrated = false;
+
+function initListings() {
+  if (_initialized) return;
+  const custom = loadStoredListings();
+  if (custom.length > 0) {
+    const mockFiltered = MOCK_LISTINGS.filter(
+      (m) => !custom.some((c) => c.id === m.id || c.roomId === m.roomId)
+    );
+    _listings = [...custom, ...mockFiltered];
+  }
+  _initialized = true;
+}
+
 const _subscribers = new Set<() => void>();
-const LOCAL_STORAGE_KEY = "staylock_custom_listings";
 
 function notify() {
   _subscribers.forEach((cb) => cb());
 }
 
-function getLocalListings(): Listing[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const data = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch (e) {
-    console.error("Failed to read custom listings from localStorage", e);
-    return [];
-  }
-}
-
-function saveLocalListing(listing: Listing) {
-  if (typeof window === "undefined") return;
-  try {
-    const local = getLocalListings();
-    const updated = [listing, ...local.filter((item) => item.id !== listing.id)];
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
-  } catch (e) {
-    console.error("Failed to save custom listing to localStorage", e);
-  }
-}
-
-function updateLocalListingAvailability(roomId: string, availability: Listing["availability"], bookingId?: string) {
-  if (typeof window === "undefined") return;
-  try {
-    const local = getLocalListings();
-    const updated = local.map((l) =>
-      l.roomId === roomId
-        ? { ...l, availability, ...(bookingId !== undefined ? { activeBookingId: bookingId || undefined } : {}) }
-        : l
-    );
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
-  } catch (e) {
-    console.error("Failed to update custom listing availability in localStorage", e);
-  }
-}
-
-function loadLocalFallback() {
-  const localListings = getLocalListings();
-  const merged = [...localListings];
-  MOCK_LISTINGS.forEach((mock) => {
-    if (!merged.some((item) => item.id === mock.id)) {
-      merged.push(mock);
-    }
-  });
-  _listings = merged;
-  notify();
-}
-
 function toListing(row: ListingRow): Listing {
+  const roomId = row.room_id;
+  const id = row.id;
+  const imageUrl = row.image_url || getStableSampleImage(roomId || id);
+
   return {
-    id: row.id,
-    roomId: row.room_id,
+    id,
+    roomId,
     ownerWallet: row.owner_wallet,
     escrowAmount: row.escrow_amount,
     nightlyPriceXlm: Number(row.nightly_price_xlm),
@@ -103,6 +109,7 @@ function toListing(row: ListingRow): Listing {
     activeBookingId: row.active_booking_id ?? undefined,
     gradientFrom: row.gradient_from,
     gradientTo: row.gradient_to,
+    imageUrl,
   };
 }
 
@@ -126,6 +133,7 @@ function toRow(listing: Listing): ListingRow {
     active_booking_id: listing.activeBookingId ?? null,
     gradient_from: listing.gradientFrom,
     gradient_to: listing.gradientTo,
+    image_url: listing.imageUrl || getStableSampleImage(listing.roomId || listing.id),
   };
 }
 
@@ -134,57 +142,56 @@ export function getListings(): Listing[] {
 }
 
 async function fetchListings() {
-  try {
-    const supabase = getSupabaseClient();
-    const { data, error } = await supabase
-      .from("listings")
-      .select("*")
-      .order("created_at", { ascending: false });
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
 
-    if (error) {
-      console.warn("Supabase listings fetch failed:", error.message);
-      loadLocalFallback();
-      return;
-    }
+  const { data, error } = await supabase
+    .from("listings")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-    const remoteListings = (data as ListingRow[] | null)?.map(toListing) ?? [];
-    const localListings = getLocalListings();
-
-    const merged = [...remoteListings];
-    localListings.forEach((local) => {
-      if (!merged.some((item) => item.id === local.id)) {
-        merged.push(local);
-      }
-    });
-
-    MOCK_LISTINGS.forEach((mock) => {
-      if (!merged.some((item) => item.id === mock.id)) {
-        merged.push(mock);
-      }
-    });
-
-    _listings = merged;
-    notify();
-  } catch (err) {
-    console.warn("Failed to fetch listings from Supabase, loading local fallback:", err);
-    loadLocalFallback();
+  if (error) {
+    // Table missing or RLS blocking — keep showing mock listings so the UI stays functional
+    console.warn("Supabase listings fetch failed:", error.message);
+    return;
   }
+
+  _listings = (data as ListingRow[] | null)?.map(toListing) ?? [];
+  notify();
 }
 
 export async function addListing(listing: Listing) {
-  // Always save locally first for resilience
-  saveLocalListing(listing);
-
-  try {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase.from("listings").insert(toRow(listing));
-
-    if (error) {
-      console.warn("Supabase insert failed, custom listing saved locally:", error.message);
-    }
-  } catch (err) {
-    console.warn("Supabase connection failed, custom listing saved locally:", err);
+  // Đảm bảo phòng luôn có ảnh mẫu lưu trú được gán
+  if (!listing.imageUrl) {
+    listing.imageUrl = getStableSampleImage(listing.roomId || listing.id);
   }
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { error } = await supabase.from("listings").insert(toRow(listing));
+      if (error) {
+        if (error.message?.includes("image_url")) {
+          // Bỏ qua trường image_url nếu schema Supabase chưa có cột này
+          const rowFallback: any = toRow(listing);
+          delete rowFallback.image_url;
+          await supabase.from("listings").insert(rowFallback);
+        } else {
+          console.warn("Supabase insert warning:", error.message);
+        }
+      }
+    } catch (err) {
+      console.warn("Supabase insert caught:", err);
+    }
+  }
+
+  // Lưu trữ ổn định trên client storage để giữ nguyên trạng thái khi tải lại trang
+  const currentCustom = loadStoredListings();
+  const nextCustom = [
+    listing,
+    ...currentCustom.filter((x) => x.id !== listing.id && x.roomId !== listing.roomId),
+  ];
+  saveStoredListings(nextCustom);
 
   _listings = [listing, ..._listings.filter((item) => item.id !== listing.id)];
   notify();
@@ -195,11 +202,8 @@ export async function updateListingAvailability(
   availability: Listing["availability"],
   bookingId?: string,
 ) {
-  // Always update locally first for resilience
-  updateLocalListingAvailability(roomId, availability, bookingId);
-
-  try {
-    const supabase = getSupabaseClient();
+  const supabase = getSupabaseClient();
+  if (supabase) {
     const patch: Record<string, unknown> = { availability };
     if (bookingId !== undefined) patch.active_booking_id = bookingId || null;
 
@@ -208,11 +212,7 @@ export async function updateListingAvailability(
       .update(patch)
       .eq("room_id", roomId);
 
-    if (error) {
-      console.warn("Supabase update failed, availability updated locally:", error.message);
-    }
-  } catch (err) {
-    console.warn("Supabase connection failed, availability updated locally:", err);
+    if (error) throw error;
   }
 
   _listings = _listings.map((l) =>
@@ -220,6 +220,19 @@ export async function updateListingAvailability(
       ? { ...l, availability, ...(bookingId !== undefined ? { activeBookingId: bookingId || undefined } : {}) }
       : l,
   );
+
+  // Cập nhật lại trong persistent storage
+  const currentCustom = loadStoredListings();
+  if (currentCustom.some((c) => c.roomId === roomId)) {
+    saveStoredListings(
+      currentCustom.map((l) =>
+        l.roomId === roomId
+          ? { ...l, availability, ...(bookingId !== undefined ? { activeBookingId: bookingId || undefined } : {}) }
+          : l
+      )
+    );
+  }
+
   notify();
 }
 
@@ -229,49 +242,41 @@ function subscribe(cb: () => void): () => void {
 }
 
 export function useListings(): Listing[] {
-  const [listings, setListings] = useState<Listing[]>(getListings);
+  // During SSR and initial client hydration, always return MOCK_LISTINGS to prevent hydration mismatch.
+  // Once hydrated (or on subsequent client-side renders), return the up-to-date getListings().
+  const [listings, setListings] = useState<Listing[]>(() => {
+    return _isHydrated ? getListings() : MOCK_LISTINGS;
+  });
 
   useEffect(() => {
-    const unsubscribe = subscribe(() => setListings(getListings()));
+    _isHydrated = true;
+    initListings();
+    setListings(getListings());
 
-    // Synchronously load any localStorage listings on client-side to prevent flash of empty workspace
-    const local = getLocalListings();
-    if (local.length > 0) {
-      const merged = [...local];
-      MOCK_LISTINGS.forEach((mock) => {
-        if (!merged.some((item) => item.id === mock.id)) {
-          merged.push(mock);
-        }
-      });
-      _listings = merged;
-      setListings(merged);
-    }
+    const unsubscribe = subscribe(() => setListings(getListings()));
 
     fetchListings().catch((error) => {
       console.error("Failed to load listings from Supabase", error);
     });
 
-    try {
-      const supabase = getSupabaseClient();
-      const channel = supabase
-        .channel("staylock-listings")
-        .on("postgres_changes", { event: "*", schema: "public", table: "listings" }, () => {
-          fetchListings().catch((error) => {
-            console.error("Failed to refresh listings from Supabase", error);
-          });
-        })
-        .subscribe();
-
-      return () => {
-        unsubscribe();
-        void supabase.removeChannel(channel);
-      };
-    } catch (err) {
-      console.warn("Failed to subscribe to Supabase realtime channel:", err);
-      return () => {
-        unsubscribe();
-      };
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return unsubscribe;
     }
+
+    const channel = supabase
+      .channel("staylock-listings")
+      .on("postgres_changes", { event: "*", schema: "public", table: "listings" }, () => {
+        fetchListings().catch((error) => {
+          console.error("Failed to refresh listings from Supabase", error);
+        });
+      })
+      .subscribe();
+
+    return () => {
+      unsubscribe();
+      void supabase.removeChannel(channel);
+    };
   }, []);
 
   return listings;
@@ -296,31 +301,39 @@ export function buildListing(params: {
   description: string;
   ownerWallet: string;
   hostName: string;
+  imageUrl?: string;
 }): Listing {
   const idx = _gradientIndex % GRADIENTS.length;
   _gradientIndex++;
   const [gradientFrom, gradientTo] = GRADIENTS[idx];
   const timestamp = Date.now();
   const suffix = Math.random().toString(36).slice(2, 8);
+  const roomId = String(timestamp);
+
+  // Tự động gán một ảnh mẫu lưu trú từ danh sách ảnh có sẵn
+  const assignedImage = params.imageUrl || getStableSampleImage(roomId, _gradientIndex);
 
   return {
     id: `listing-${timestamp}-${suffix}`,
-    roomId: String(timestamp),
+    roomId,
     ownerWallet: params.ownerWallet,
     escrowAmount: params.escrowAmount,
     nightlyPriceXlm: params.nightlyPriceXlm,
     title: params.title,
     location: params.location,
     description: params.description,
-    amenities: [],
+    amenities: ["Bảo chứng ký quỹ Soroban", "Xác thực on-chain", "Khóa ví Freighter"],
     hostName: params.hostName || params.ownerWallet.slice(0, 8),
     hostSince: new Date().getFullYear().toString(),
     maxGuests: 4,
-    bedrooms: 1,
-    bathrooms: 1,
+    bedrooms: 2,
+    bathrooms: 2,
     availability: "Available",
     gradientFrom,
     gradientTo,
+    imageUrl: assignedImage,
+    rating: 4.96,
+    reviewCount: 1,
   };
 }
 

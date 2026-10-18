@@ -16,7 +16,7 @@ type UseEscrowOptions = {
 };
 
 export function useEscrow({ address, bookingId, roomId, reservationStage, refreshBooking }: UseEscrowOptions) {
-  const [lifecycleStatus, setLifecycleStatus] = useState("Track a reservation to manage check-in, completion, or cancellation.");
+  const [lifecycleStatus, setLifecycleStatus] = useState("Tra cứu đặt phòng để quản lý nhận phòng, hoàn tất kỳ nghỉ hoặc hủy cọc.");
   const [lifecycleAction, setLifecycleAction] = useState<LifecycleAction>("");
 
   const lifecycleResult = useMemo(() => parseJson(lifecycleStatus), [lifecycleStatus]);
@@ -30,17 +30,17 @@ export function useEscrow({ address, bookingId, roomId, reservationStage, refres
     listingAvailabilityAfter: "Available" | "Reserved" | "Completed",
   ) {
     if (!address) {
-      setLifecycleStatus("Connect your wallet first.");
+      setLifecycleStatus("Vui lòng kết nối ví Freighter trước.");
       return;
     }
 
     if (!bookingId) {
-      setLifecycleStatus("Enter a reservation code first.");
+      setLifecycleStatus("Vui lòng nhập mã đặt phòng trước.");
       return;
     }
 
     if (reservationStage === "Cancelled" || reservationStage === "Completed") {
-      setLifecycleStatus("This reservation is already in a terminal state.");
+      setLifecycleStatus("Lượt đặt phòng này đã hoàn tất hoặc đã hủy trên chuỗi.");
       return;
     }
 
@@ -48,10 +48,10 @@ export function useEscrow({ address, bookingId, roomId, reservationStage, refres
     setLifecycleStatus(pendingMessage);
 
     try {
-      setLifecycleStatus("Waiting for wallet approval...");
+      setLifecycleStatus("Đang chờ phê duyệt từ ví Freighter...");
       const sendResult = await runEscrowAction(address, bookingId, contractMethod);
 
-      setLifecycleStatus("Updating your stay timeline...");
+      setLifecycleStatus("Đang cập nhật tiến trình trên sổ cái Stellar...");
 
       if (sendResult.status === "ERROR") {
         setLifecycleStatus(JSON.stringify(toJsonSafe(sendResult), null, 2));
@@ -90,30 +90,30 @@ export function useEscrow({ address, bookingId, roomId, reservationStage, refres
 
   function confirmCheckIn() {
     if (reservationStage !== "Reserved") {
-      setLifecycleStatus("Check-in is only available for reserved stays.");
+      setLifecycleStatus("Chỉ có thể xác nhận nhận phòng khi phòng đang ở trạng thái đã đặt cọc.");
       return Promise.resolve();
     }
 
     return runLifecycleAction(
       "checkin",
       "checkin",
-      "Preparing check-in confirmation...",
-      "Check-in confirmed. The stay is verified and escrow remains protected.",
+      "Đang chuẩn bị xác nhận nhận phòng...",
+      "Đã xác nhận nhận phòng thành công! Lưu trú đã được xác thực và tiền cọc tiếp tục được bảo chứng an toàn.",
       "Reserved",
     );
   }
 
   function completeStay() {
     if (reservationStage !== "Checked In") {
-      setLifecycleStatus("Completion is only available after check-in.");
+      setLifecycleStatus("Chỉ có thể giải ngân hoàn tất sau khi khách đã xác nhận nhận phòng.");
       return Promise.resolve();
     }
 
     return runLifecycleAction(
       "checkout",
       "checkout",
-      "Preparing stay completion...",
-      "Stay completed. Protected settlement has been released and the listing is available again.",
+      "Đang chuẩn bị hoàn tất kỳ nghỉ & giải ngân...",
+      "Kỳ nghỉ đã hoàn tất thành công! Tiền cọc ký quỹ đã được giải ngân về ví chủ nhà.",
       "Available",
     );
   }
@@ -122,8 +122,8 @@ export function useEscrow({ address, bookingId, roomId, reservationStage, refres
     return runLifecycleAction(
       "cancel",
       "cancel_booking",
-      "Preparing cancellation...",
-      "Reservation cancelled. The protected stay path is now closed.",
+      "Đang chuẩn bị hủy đặt phòng & hoàn cọc...",
+      "Đã hủy đặt phòng thành công. Tiền cọc đã được hoàn trả về ví của bạn.",
       "Available",
     );
   }

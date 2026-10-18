@@ -27,7 +27,7 @@ export function showError(error: unknown) {
 }
 
 export function shortAddress(value: string) {
-  return value ? `${value.slice(0, 6)}...${value.slice(-6)}` : "Connect wallet";
+  return value ? `${value.slice(0, 6)}...${value.slice(-6)}` : "Chưa kết nối ví";
 }
 
 export function parseJson(value: string) {
@@ -39,7 +39,7 @@ export function parseJson(value: string) {
 }
 
 export function getExplorerUrl(hash: unknown) {
-  return typeof hash === "string" && hash ? `https://stellar.expert/explorer/public/tx/${hash}` : "";
+  return typeof hash === "string" && hash ? `https://stellar.expert/explorer/testnet/tx/${hash}` : "";
 }
 
 export function statusMessage(result: Record<string, unknown> | null, fallback: string) {

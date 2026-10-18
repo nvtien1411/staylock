@@ -1,5 +1,5 @@
 import { Networks } from "@stellar/stellar-sdk";
 
-export const CONTRACT_ID = "CA4E34NQ47FHMK6PPNRSXCD6BIK4DRPQI5WYFGT3CKJLOERLZ3UKMC5N";
-export const RPC_URL = "https://mainnet.sorobanrpc.com";
-export const NETWORK_PASSPHRASE = Networks.PUBLIC;
+export const CONTRACT_ID = "CDMSD7ZXERDCSRA5ENB2FDPI45FW4EMC4J6LAEM4BWSKMZFZ7SGLJ3RO";
+export const RPC_URL = "https://soroban-testnet.stellar.org";
+export const NETWORK_PASSPHRASE = Networks.TESTNET;

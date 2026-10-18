@@ -6,13 +6,13 @@ export function OverviewSection() {
     <section id="overview" className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <div className={`${glassCard} overflow-hidden p-6 sm:p-8`}>
         <div className="inline-flex rounded-full border border-amber-200/20 bg-amber-200/10 px-4 py-2 text-sm text-amber-100 shadow-lg shadow-amber-500/10">
-          Escrow-protected stays on Stellar
+          Lưu trú bảo chứng ký quỹ trên Stellar
         </div>
         <h2 className="mt-6 max-w-4xl text-5xl font-black leading-[0.9] tracking-[-0.06em] text-white sm:text-6xl lg:text-7xl">
-          Book premium stays with trust built in.
+          Đặt phòng thượng lưu với niềm tin tuyệt đối.
         </h2>
         <p className="mt-5 max-w-2xl text-base leading-7 text-stone-300 sm:text-lg">
-          Browse verified properties, reserve with your Freighter wallet, and let the Soroban smart contract hold your deposit until check-in is confirmed.
+          Khám phá các biệt thự đã xác thực, đặt phòng an toàn qua ví Freighter và để hợp đồng thông minh Soroban giữ tiền cọc cho tới khi bạn nhận phòng.
         </p>
         <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {metrics.map(([value, label]) => (
@@ -25,7 +25,7 @@ export function OverviewSection() {
       </div>
 
       <div className={`${glassCard} p-6 sm:p-8`}>
-        <p className="text-sm uppercase tracking-[0.28em] text-stone-500">How it works</p>
+        <p className="text-sm uppercase tracking-[0.28em] text-stone-500">Quy trình hoạt động</p>
         <div className="mt-5 space-y-4">
           {escrowSteps.map(([number, title, description]) => (
             <div key={title} className="rounded-3xl border border-white/10 bg-white/[0.045] p-5">

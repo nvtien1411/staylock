@@ -1,5 +1,6 @@
 import { FieldLabel } from "@/app/components/ui/FieldLabel";
 import { glassCard, inputClass } from "@/app/components/ui/constants";
+import { Lock, ShieldCheck, ArrowRight } from "lucide-react";
 
 type ReservationFormProps = {
   traveler: string;
@@ -35,58 +36,95 @@ export function ReservationForm({
   createBooking,
 }: ReservationFormProps) {
   return (
-    <section className={`${glassCard} p-5 sm:p-7`}>
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <section className={`${glassCard} p-6 sm:p-8 space-y-6`}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.28em] text-amber-100/70">Reservation experience</p>
-          <h2 className="mt-3 text-4xl font-black tracking-tight sm:text-5xl">Reserve your stay</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-400">Create a protected reservation in seconds. Your wallet approval secures the escrow deposit without exposing the complexity underneath.</p>
+          <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+            Đặt phòng giao thức trực tiếp
+          </span>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-white">
+            Khởi tạo ký quỹ tùy chỉnh
+          </h2>
+          <p className="mt-1 text-xs leading-relaxed text-stone-400">
+            Khóa tiền cọc ký quỹ với các thông số tùy biến trực tiếp vào hợp đồng thông minh Soroban.
+          </p>
         </div>
-        <span className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm text-stone-300">3-step secure flow</span>
+        <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1 text-xs text-stone-300">
+          Stellar Soroban v21
+        </span>
       </div>
 
-      <div className="mb-7 grid gap-3 md:grid-cols-3">
-        {["Guest details", "Stay details", "Secure deposit"].map((step, index) => (
-          <div key={step} className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
-            <p className="text-xs text-amber-100/70">Step {index + 1}</p>
-            <p className="mt-1 font-semibold text-white">{step}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <label>
-          <FieldLabel label="Guest Wallet" hint="auto-filled" />
-          <input value={traveler} onChange={(event) => setTraveler(event.target.value)} placeholder="Guest wallet address" className={inputClass} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="block">
+          <FieldLabel label="Ví khách du lịch" hint="địa chỉ ví G..." required />
+          <input
+            value={traveler}
+            onChange={(event) => setTraveler(event.target.value)}
+            placeholder="Địa chỉ ví khách (G...)"
+            className={inputClass}
+          />
         </label>
-        <label>
-          <FieldLabel label="Property Owner" hint="wallet" />
-          <input value={host} onChange={(event) => setHost(event.target.value)} placeholder="Owner wallet address" className={inputClass} />
+        <label className="block">
+          <FieldLabel label="Ví chủ nhà thụ hưởng" hint="chủ phòng" required />
+          <input
+            value={host}
+            onChange={(event) => setHost(event.target.value)}
+            placeholder="Địa chỉ ví chủ nhà (G...)"
+            className={inputClass}
+          />
         </label>
-        <label>
-          <FieldLabel label="Room / Villa ID" hint="stay" />
-          <input type="number" min="0" value={roomId} onChange={(event) => setRoomId(event.target.value)} placeholder="1024" className={inputClass} />
+        <label className="block">
+          <FieldLabel label="Mã phòng / chỗ nghỉ" hint="dạng số" required />
+          <input
+            type="number"
+            min="0"
+            value={roomId}
+            onChange={(event) => setRoomId(event.target.value)}
+            placeholder="1001"
+            className={inputClass}
+          />
         </label>
-        <label>
-          <FieldLabel label="Escrow Deposit" hint="stroops" />
-          <input type="number" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="125000000" className={inputClass} />
+        <label className="block">
+          <FieldLabel label="Tiền cọc ký quỹ" hint="stroops (1 XLM = 10,000,000)" required />
+          <input
+            type="number"
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            placeholder="125000000"
+            className={inputClass}
+          />
         </label>
-        <label>
-          <FieldLabel label="Check-in Day" hint="day" />
-          <input type="number" min="0" value={dayCheckin} onChange={(event) => setDayCheckin(event.target.value)} placeholder="20260520" className={inputClass} />
+        <label className="block">
+          <FieldLabel label="Ngày nhận phòng" hint="Định dạng YYYYMMDD" required />
+          <input
+            type="number"
+            min="0"
+            value={dayCheckin}
+            onChange={(event) => setDayCheckin(event.target.value)}
+            placeholder="20260520"
+            className={inputClass}
+          />
         </label>
-        <label>
-          <FieldLabel label="Check-out Day" hint="day" />
-          <input type="number" min="0" value={dayCheckout} onChange={(event) => setDayCheckout(event.target.value)} placeholder="20260524" className={inputClass} />
+        <label className="block">
+          <FieldLabel label="Ngày trả phòng" hint="Định dạng YYYYMMDD" required />
+          <input
+            type="number"
+            min="0"
+            value={dayCheckout}
+            onChange={(event) => setDayCheckout(event.target.value)}
+            placeholder="20260524"
+            className={inputClass}
+          />
         </label>
       </div>
 
       <button
         onClick={createBooking}
         disabled={isCreating}
-        className="mt-8 w-full rounded-2xl bg-gradient-to-r from-stone-50 via-amber-100 to-amber-300 px-8 py-4 text-base font-black text-stone-950 shadow-2xl shadow-amber-500/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-amber-300/30 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 py-3.5 text-xs font-semibold text-stone-950 shadow-lg shadow-amber-500/20 transition hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isCreating ? "Securing reservation..." : "Reserve Stay"}
+        <Lock className="h-4 w-4" />
+        <span>{isCreating ? "Đang xác thực ký quỹ trên Stellar..." : "Ký duyệt & khóa tiền cọc ký quỹ"}</span>
       </button>
     </section>
   );

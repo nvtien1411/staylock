@@ -1,10 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import {
+  X,
+  Calendar,
+  ShieldCheck,
+  Lock,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  Info,
+  Building,
+  CheckCircle2,
+  Wallet,
+} from "lucide-react";
 import type { Listing } from "@/app/types/listing";
 import { inputClass } from "@/app/components/ui/constants";
 import { shortAddress } from "@/app/lib/soroban/format";
 import { CONTRACT_ID } from "@/app/lib/soroban/config";
+import { DEFAULT_FALLBACK_IMAGE } from "@/app/lib/listings";
 
 type BookingModalProps = {
   listing: Listing;
@@ -44,13 +58,34 @@ function addDays(dateStr: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
-export function BookingModal({ listing, walletAddress, isCreating, onConfirm, onClose }: BookingModalProps) {
+export function BookingModal({
+  listing,
+  walletAddress,
+  isCreating,
+  onConfirm,
+  onClose,
+}: BookingModalProps) {
+  const [modalImg, setModalImg] = useState(listing.imageUrl || DEFAULT_FALLBACK_IMAGE);
+  const [modalImgFailed, setModalImgFailed] = useState(false);
   const [checkinDate, setCheckinDate] = useState(addDays(today(), 1));
   const [checkoutDate, setCheckoutDate] = useState(addDays(today(), 5));
-  const [showDetails, setShowDetails] = useState(false);
+  const [showContractDetails, setShowContractDetails] = useState(false);
 
-  const nights = Math.max(1, Math.round((new Date(checkoutDate).getTime() - new Date(checkinDate).getTime()) / 86400000));
-  const totalXlm = listing.nightlyPriceXlm * nights;
+  function handleImageError() {
+    if (modalImg !== DEFAULT_FALLBACK_IMAGE) {
+      setModalImg(DEFAULT_FALLBACK_IMAGE);
+    } else {
+      setModalImgFailed(true);
+    }
+  }
+
+  const nights = Math.max(
+    1,
+    Math.round(
+      (new Date(checkoutDate).getTime() - new Date(checkinDate).getTime()) / 86400000
+    )
+  );
+  const totalStayXlm = listing.nightlyPriceXlm * nights;
 
   function handleConfirm() {
     if (!walletAddress) return;
@@ -60,119 +95,228 @@ export function BookingModal({ listing, walletAddress, isCreating, onConfirm, on
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+      onClick={onClose}
+    >
+      {/* Lớp nền tối mờ */}
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity" />
+
+      {/* Thẻ cửa sổ Modal */}
       <div
-        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-[#0c0b09] shadow-2xl shadow-black/60"
+        className="relative my-8 w-full max-w-xl overflow-hidden rounded-3xl border border-white/[0.12] bg-[#0c0e15] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_30px_rgba(245,158,11,0.1)] transition-all animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <div
-          className="h-36 w-full"
-          style={{
-            background: `radial-gradient(circle at 28% 20%, rgba(255,255,255,0.28), transparent 14%), linear-gradient(135deg, ${listing.gradientFrom}, ${listing.gradientTo})`,
-          }}
-        >
-          <div className="flex h-full items-end justify-between p-5">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-white/60">{listing.location}</p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">{listing.title}</h2>
-            </div>
-            <button
-              onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/70 backdrop-blur-sm transition hover:bg-black/60 hover:text-white"
-            >
-              ×
-            </button>
+        {/* Banner ảnh bìa */}
+        <div className="relative h-40 w-full overflow-hidden bg-[#12151f]">
+          {!modalImgFailed ? (
+            <img
+              src={modalImg}
+              alt={listing.title}
+              onError={handleImageError}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div
+              className="h-full w-full"
+              style={{
+                background: `radial-gradient(circle at 28% 20%, rgba(255,255,255,0.28), transparent 14%), linear-gradient(135deg, ${listing.gradientFrom}, ${listing.gradientTo})`,
+              }}
+            />
+          )}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0e15] via-[#0c0e15]/60 to-black/40" />
+
+          {/* Nút đóng */}
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 backdrop-blur-md transition hover:bg-black/80 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          {/* Tiêu đề trên banner */}
+          <div className="absolute bottom-4 left-5 right-5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-300">
+              {listing.location}
+            </span>
+            <h2 className="mt-0.5 text-xl font-bold tracking-tight text-white drop-shadow">
+              {listing.title}
+            </h2>
           </div>
         </div>
 
-        <div className="p-6">
+        {/* Thân Modal */}
+        <div className="p-6 space-y-6">
+          {/* Cảnh báo chưa kết nối ví */}
           {!walletAddress && (
-            <div className="mb-5 rounded-2xl border border-amber-200/20 bg-amber-200/10 p-4">
-              <p className="text-sm font-semibold text-amber-100">Connect your wallet to reserve this stay.</p>
+            <div className="flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-xs text-amber-200">
+              <Wallet className="h-5 w-5 shrink-0 text-amber-300" />
+              <div>
+                <p className="font-semibold text-amber-100">Chưa kết nối ví Freighter</p>
+                <p className="mt-0.5 text-amber-200/80">
+                  Vui lòng kết nối ví Freighter để cấp quyền khóa tiền cọc ký quỹ trên chuỗi.
+                </p>
+              </div>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <p className="mb-2 text-xs uppercase tracking-widest text-stone-500">Check-in</p>
-              <input
-                type="date"
-                value={checkinDate}
-                min={addDays(today(), 1)}
-                onChange={(e) => setCheckinDate(e.target.value)}
-                className={inputClass}
-              />
-            </label>
-            <label className="block">
-              <p className="mb-2 text-xs uppercase tracking-widest text-stone-500">Check-out</p>
-              <input
-                type="date"
-                value={checkoutDate}
-                min={addDays(checkinDate, 1)}
-                onChange={(e) => setCheckoutDate(e.target.value)}
-                className={inputClass}
-              />
-            </label>
+          {/* Chọn ngày lưu trú */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-stone-400">
+              Thời gian lưu trú
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block space-y-1.5">
+                <span className="flex items-center gap-1 text-[11px] text-stone-400">
+                  <Calendar className="h-3 w-3 text-amber-400" />
+                  Ngày nhận phòng (check-in)
+                </span>
+                <input
+                  type="date"
+                  value={checkinDate}
+                  min={addDays(today(), 1)}
+                  onChange={(e) => setCheckinDate(e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+
+              <label className="block space-y-1.5">
+                <span className="flex items-center gap-1 text-[11px] text-stone-400">
+                  <Calendar className="h-3 w-3 text-amber-400" />
+                  Ngày trả phòng (check-out)
+                </span>
+                <input
+                  type="date"
+                  value={checkoutDate}
+                  min={addDays(checkinDate, 1)}
+                  onChange={(e) => setCheckoutDate(e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+            </div>
           </div>
 
-          <div className="mt-5 rounded-xl border border-white/10 bg-black/30 p-4">
-            <div className="flex items-center justify-between gap-4">
+          {/* Bảng phân tách chi phí minh bạch */}
+          <div className="rounded-2xl border border-white/[0.08] bg-black/40 p-4 space-y-3.5">
+            <div className="flex items-center justify-between text-xs text-stone-300">
+              <span>
+                Tiền phòng ({nights} đêm &times; {xlmToDisplay(listing.nightlyPriceXlm)})
+              </span>
+              <span className="font-semibold text-white">{xlmToDisplay(totalStayXlm)}</span>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-stone-300">
+              <div className="flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5 text-amber-400" />
+                <span>Tiền cọc ký quỹ on-chain</span>
+              </div>
+              <span className="font-semibold text-amber-300">
+                {stroopsToXlm(listing.escrowAmount)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-stone-400">
+              <span>Ước tính phí mạng Stellar</span>
+              <span className="font-mono text-[11px] text-stone-300">&lt; 0.0001 XLM</span>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-emerald-400">
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Phí hoa hồng nền tảng
+              </span>
+              <span className="font-bold">0.00 XLM (0%)</span>
+            </div>
+
+            <div className="border-t border-white/[0.08] pt-3 flex items-baseline justify-between">
               <div>
-                <p className="text-xs text-stone-500">{nights} night{nights !== 1 ? "s" : ""}</p>
-                <p className="mt-1 text-xl font-semibold text-white">{xlmToDisplay(totalXlm)}</p>
+                <p className="text-[10px] uppercase tracking-wider text-stone-500">
+                  Tổng cọc ký quỹ ủy quyền
+                </p>
+                <p className="text-xl font-bold tracking-tight text-white">
+                  {stroopsToXlm(listing.escrowAmount)}
+                </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-stone-500">Escrow deposit</p>
-                <p className="mt-1 text-sm font-bold text-amber-100">{stroopsToXlm(listing.escrowAmount)}</p>
+                <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">
+                  Bảo chứng bằng Soroban
+                </span>
               </div>
             </div>
-            <p className="mt-3 text-xs leading-5 text-stone-500">
-              Your deposit is held in escrow on Stellar until check-in is confirmed. No intermediaries.
+          </div>
+
+          {/* Ghi chú bảo đảm ký quỹ */}
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-3.5 text-xs text-stone-300">
+            <ShieldCheck className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+            <p className="leading-relaxed">
+              Tiền cọc của bạn được khóa an toàn bên trong hợp đồng thông minh Soroban. Chủ nhà không thể
+              rút tiền cho đến khi bạn xác nhận đã nhận phòng an toàn.
             </p>
           </div>
 
-          <div className="mt-3">
+          {/* Ngăn kéo xem chi tiết thông số kỹ thuật on-chain */}
+          <div>
             <button
-              onClick={() => setShowDetails(!showDetails)}
-              className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs font-semibold text-stone-400 transition hover:bg-white/[0.06] hover:text-stone-200"
+              onClick={() => setShowContractDetails(!showContractDetails)}
+              className="flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs font-medium text-stone-400 transition hover:bg-white/[0.05] hover:text-stone-200"
             >
-              <span>View escrow details</span>
-              <span className="text-stone-600">{showDetails ? "▲" : "▼"}</span>
+              <span>Xem thông số kỹ thuật hợp đồng trên chuỗi</span>
+              {showContractDetails ? (
+                <ChevronUp className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
             </button>
-            {showDetails && (
-              <div className="mt-2 space-y-2 rounded-xl border border-white/10 bg-black/30 p-4 text-xs">
-                <div className="flex items-start justify-between gap-4">
-                  <span className="text-stone-500">Room ID</span>
-                  <span className="font-mono text-stone-300">#{listing.roomId}</span>
+
+            {showContractDetails && (
+              <div className="mt-2 space-y-2 rounded-xl border border-white/[0.06] bg-black/40 p-4 text-[11px] font-mono">
+                <div className="flex items-center justify-between text-stone-400">
+                  <span>Mã phòng:</span>
+                  <span className="text-white">#{listing.roomId}</span>
                 </div>
-                <div className="flex items-start justify-between gap-4">
-                  <span className="text-stone-500">Host wallet</span>
-                  <span className="font-mono text-stone-300">{shortAddress(listing.ownerWallet)}</span>
+                <div className="flex items-center justify-between text-stone-400">
+                  <span>Ví chủ nhà thụ hưởng:</span>
+                  <span className="text-white">{shortAddress(listing.ownerWallet)}</span>
                 </div>
-                <div className="flex items-start justify-between gap-4">
-                  <span className="text-stone-500">Contract</span>
-                  <span className="font-mono text-stone-300">{shortAddress(CONTRACT_ID)}</span>
+                <div className="flex items-center justify-between text-stone-400">
+                  <span>Hợp đồng Soroban:</span>
+                  <span className="text-amber-300">{shortAddress(CONTRACT_ID)}</span>
                 </div>
-                <div className="flex items-start justify-between gap-4">
-                  <span className="text-stone-500">Network</span>
-                  <span className="text-stone-300">Stellar Mainnet</span>
+                <div className="flex items-center justify-between text-stone-400">
+                  <span>Mạng đồng thuận:</span>
+                  <span className="text-white">Stellar Testnet</span>
                 </div>
               </div>
             )}
           </div>
 
-          <button
-            onClick={handleConfirm}
-            disabled={isCreating || !walletAddress}
-            className="mt-5 w-full rounded-xl bg-amber-300 px-8 py-3.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/15 transition-all duration-200 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isCreating ? "Securing reservation..." : walletAddress ? "Confirm & Reserve" : "Connect Wallet First"}
-          </button>
+          {/* Nút hành động */}
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={handleConfirm}
+              disabled={isCreating || !walletAddress}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 py-3.5 text-sm font-bold text-stone-950 shadow-lg shadow-amber-500/20 transition-all duration-200 hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isCreating ? (
+                <>
+                  <span className="h-4 w-4 rounded-full border-2 border-stone-950 border-t-transparent animate-spin" />
+                  <span>Đang ký duyệt &amp; khóa ký quỹ trên Stellar...</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="h-4 w-4" />
+                  <span>
+                    {walletAddress ? "Xác nhận & khóa tiền cọc ký quỹ" : "Vui lòng kết nối ví trước"}
+                  </span>
+                </>
+              )}
+            </button>
 
-          <p className="mt-4 text-center text-xs leading-5 text-stone-600">
-            Wallet approval required · Stellar Mainnet · Freighter
-          </p>
+            <p className="text-center text-[11px] text-stone-500">
+              Yêu cầu chữ ký xác nhận ví Freighter &middot; Stellar Soroban &middot; Phi lưu ký (non-custodial)
+            </p>
+          </div>
         </div>
       </div>
     </div>

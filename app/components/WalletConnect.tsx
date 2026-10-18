@@ -16,8 +16,8 @@ import {
   xdr,
 } from "@stellar/stellar-sdk";
 
-const CONTRACT_ID = "CA4E34NQ47FHMK6PPNRSXCD6BIK4DRPQI5WYFGT3CKJLOERLZ3UKMC5N";
-const RPC_URL = "https://mainnet.sorobanrpc.com";
+const CONTRACT_ID = "CDMSD7ZXERDCSRA5ENB2FDPI45FW4EMC4J6LAEM4BWSKMZFZ7SGLJ3RO";
+const RPC_URL = "https://soroban-testnet.stellar.org";
 const inputClass = "w-full rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3.5 text-sm text-white placeholder:text-stone-500 outline-none transition-all duration-300 focus:border-amber-200/50 focus:bg-white/[0.08] focus:ring-4 focus:ring-amber-200/10";
 const glassCard = "rounded-[2rem] border border-white/10 bg-white/[0.065] shadow-2xl shadow-black/30 backdrop-blur-2xl";
 
@@ -167,7 +167,7 @@ function fieldLabel(label: string, hint: string) {
 }
 
 function getExplorerUrl(hash: unknown) {
-  return typeof hash === "string" && hash ? `https://stellar.expert/explorer/public/tx/${hash}` : "";
+  return typeof hash === "string" && hash ? `https://stellar.expert/explorer/testnet/tx/${hash}` : "";
 }
 
 function statusMessage(result: Record<string, unknown> | null, fallback: string) {
@@ -257,7 +257,7 @@ export default function WalletConnect() {
 
       const transaction = new TransactionBuilder(account, {
         fee: BASE_FEE,
-        networkPassphrase: Networks.PUBLIC,
+        networkPassphrase: Networks.TESTNET,
       })
         .addOperation(contract.call("get_booking", bookingIdScVal))
         .setTimeout(30)
@@ -316,7 +316,7 @@ export default function WalletConnect() {
 
       const transaction = new TransactionBuilder(sourceAccount, {
         fee: BASE_FEE,
-        networkPassphrase: Networks.PUBLIC,
+        networkPassphrase: Networks.TESTNET,
       })
         .addOperation(
           contract.call(
@@ -338,7 +338,7 @@ export default function WalletConnect() {
 
       const signed = await signTransaction(preparedTransaction.toXDR(), {
         address,
-        networkPassphrase: Networks.PUBLIC,
+        networkPassphrase: Networks.TESTNET,
       });
 
       if (signed.error) {
@@ -347,7 +347,7 @@ export default function WalletConnect() {
 
       setCreateStatus("Finalizing reservation...");
 
-      const signedTransaction = new Transaction(signed.signedTxXdr, Networks.PUBLIC);
+      const signedTransaction = new Transaction(signed.signedTxXdr, Networks.TESTNET);
       const sendResult = await server.sendTransaction(signedTransaction);
 
       if (sendResult.status === "ERROR") {
@@ -395,7 +395,7 @@ export default function WalletConnect() {
 
       const transaction = new TransactionBuilder(sourceAccount, {
         fee: BASE_FEE,
-        networkPassphrase: Networks.PUBLIC,
+        networkPassphrase: Networks.TESTNET,
       })
         .addOperation(
           contract.call(
@@ -413,7 +413,7 @@ export default function WalletConnect() {
 
       const signed = await signTransaction(preparedTransaction.toXDR(), {
         address,
-        networkPassphrase: Networks.PUBLIC,
+        networkPassphrase: Networks.TESTNET,
       });
 
       if (signed.error) {
@@ -422,7 +422,7 @@ export default function WalletConnect() {
 
       setHostStatus("Opening your host workspace...");
 
-      const signedTransaction = new Transaction(signed.signedTxXdr, Networks.PUBLIC);
+      const signedTransaction = new Transaction(signed.signedTxXdr, Networks.TESTNET);
       const sendResult = await server.sendTransaction(signedTransaction);
 
       if (sendResult.status === "ERROR") {
@@ -471,7 +471,7 @@ export default function WalletConnect() {
 
       const transaction = new TransactionBuilder(sourceAccount, {
         fee: BASE_FEE,
-        networkPassphrase: Networks.PUBLIC,
+        networkPassphrase: Networks.TESTNET,
       })
         .addOperation(
           contract.call(
@@ -489,7 +489,7 @@ export default function WalletConnect() {
 
       const signed = await signTransaction(preparedTransaction.toXDR(), {
         address,
-        networkPassphrase: Networks.PUBLIC,
+        networkPassphrase: Networks.TESTNET,
       });
 
       if (signed.error) {
@@ -498,7 +498,7 @@ export default function WalletConnect() {
 
       setPropertyStatus("Publishing property...");
 
-      const signedTransaction = new Transaction(signed.signedTxXdr, Networks.PUBLIC);
+      const signedTransaction = new Transaction(signed.signedTxXdr, Networks.TESTNET);
       const sendResult = await server.sendTransaction(signedTransaction);
 
       if (sendResult.status === "ERROR") {
@@ -563,7 +563,7 @@ export default function WalletConnect() {
 
       const transaction = new TransactionBuilder(sourceAccount, {
         fee: BASE_FEE,
-        networkPassphrase: Networks.PUBLIC,
+        networkPassphrase: Networks.TESTNET,
       })
         .addOperation(contract.call(contractMethod, bookingIdScVal))
         .setTimeout(30)
@@ -575,7 +575,7 @@ export default function WalletConnect() {
 
       const signed = await signTransaction(preparedTransaction.toXDR(), {
         address,
-        networkPassphrase: Networks.PUBLIC,
+        networkPassphrase: Networks.TESTNET,
       });
 
       if (signed.error) {
@@ -584,7 +584,7 @@ export default function WalletConnect() {
 
       setLifecycleStatus("Updating your stay timeline...");
 
-      const signedTransaction = new Transaction(signed.signedTxXdr, Networks.PUBLIC);
+      const signedTransaction = new Transaction(signed.signedTxXdr, Networks.TESTNET);
       const sendResult = await server.sendTransaction(signedTransaction);
 
       if (sendResult.status === "ERROR") {
@@ -665,7 +665,7 @@ export default function WalletConnect() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="hidden rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs font-semibold text-emerald-100 sm:inline-flex">
-              Mainnet
+              Testnet
             </span>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-xs text-stone-200 sm:text-sm">
               <span className={`h-2 w-2 rounded-full ${address ? "bg-emerald-300 shadow-lg shadow-emerald-300/70" : "bg-stone-500"}`} />

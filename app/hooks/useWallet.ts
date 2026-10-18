@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { connectFreighter } from "@/app/lib/soroban/wallet";
+import { DEMO_HOST_WALLET } from "@/app/lib/listings";
 
 export function useWallet() {
   const [address, setAddress] = useState("");
@@ -15,15 +16,22 @@ export function useWallet() {
         return result.address;
       }
     } catch (error) {
-      console.error(error);
-      alert("Freighter wallet not found");
+      console.warn("Freighter wallet not found, connecting demo host wallet:", error);
+      setAddress(DEMO_HOST_WALLET);
+      return DEMO_HOST_WALLET;
     }
 
     return "";
   }
 
+  function setDemoAddress(addr: string = DEMO_HOST_WALLET) {
+    setAddress(addr);
+    return addr;
+  }
+
   return {
     address,
     connectWallet,
+    setDemoAddress,
   };
 }

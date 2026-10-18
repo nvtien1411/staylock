@@ -2,6 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import {
+  Building2,
+  Sparkles,
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  ArrowRight,
+  Lock,
+  PlusCircle,
+  Layers,
+  Eye,
+  RefreshCw,
+  Wallet,
+  XCircle,
+  Compass,
+  Check,
+} from "lucide-react";
 import { AppShell } from "@/app/components/layout/AppShell";
 import { ListingGrid } from "@/app/components/listings/ListingGrid";
 import { ReservationLookup } from "@/app/components/reservation/ReservationLookup";
@@ -14,15 +32,15 @@ import { isVerifiedHost, approveHost } from "@/app/lib/verifiedHosts";
 import { glassCard, inputClass } from "@/app/components/ui/constants";
 import { FieldLabel } from "@/app/components/ui/FieldLabel";
 import { shortAddress } from "@/app/lib/soroban/format";
+import type { Listing } from "@/app/types/listing";
 
 const HOST_NAV = [
-  { label: "Create Listing", href: "#create" },
-  { label: "My Listings", href: "#listings" },
-  { label: "Reservations", href: "#reservations" },
-  { label: "Escrow", href: "#escrow" },
+  { label: "Đăng phòng mới", href: "#create" },
+  { label: "Phòng của tôi", href: "#listings" },
+  { label: "Khách đặt phòng", href: "#reservations" },
+  { label: "Quyết toán ký quỹ", href: "#escrow" },
 ];
 
-// Simulated review duration in ms — long enough to feel real, short enough for demos.
 const REVIEW_DURATION_MS = 22000;
 
 export default function HostPage() {
@@ -39,8 +57,6 @@ export default function HostPage() {
   const allListings = useListings();
   const ownedListings = allListings.filter((l) => l.ownerWallet === wallet.address);
 
-  // Local state tracks whether this wallet was just approved in this session.
-  // isVerifiedHost() is the source of truth; this just triggers re-renders.
   const [hostUnlocked, setHostUnlocked] = useState(false);
   const isHost = hostUnlocked || isVerifiedHost(wallet.address);
 
@@ -48,9 +64,14 @@ export default function HostPage() {
     const address = await wallet.connectWallet();
     if (address) {
       booking.seedWallet(address);
-      // Re-check host status after connecting (handles localStorage-persisted approvals)
       if (isVerifiedHost(address)) setHostUnlocked(true);
     }
+  }
+
+  function handleDemoConnect() {
+    const address = wallet.setDemoAddress();
+    booking.seedWallet(address);
+    setHostUnlocked(true);
   }
 
   function handleApproved() {
@@ -68,11 +89,11 @@ export default function HostPage() {
       onConnect={connectWallet}
       role="host"
       navItems={HOST_NAV}
-      sidebarNote="Manage your properties, review reservations, and release settlement — all from your wallet."
-      headerTitle="Host portal"
+      sidebarNote="Quản lý bất động sản nghỉ dưỡng, kiểm tra khách đặt và giải ngân tiền cọc trực tiếp về ví của bạn."
+      headerTitle="Không gian quản lý chủ nhà"
     >
       {!wallet.address ? (
-        <WalletRequired onConnect={connectWallet} />
+        <WalletRequired onConnect={connectWallet} onDemoConnect={handleDemoConnect} />
       ) : !isHost ? (
         <HostAccessDenied address={wallet.address} onApproved={handleApproved} />
       ) : (
@@ -88,22 +109,58 @@ export default function HostPage() {
   );
 }
 
-// ─── Access states ────────────────────────────────────────────────────────────
+// ─── Trạng thái truy cập ────────────────────────────────────────────────────────────
 
-function WalletRequired({ onConnect }: { onConnect: () => void }) {
+function WalletRequired({
+  onConnect,
+  onDemoConnect,
+}: {
+  onConnect: () => void;
+  onDemoConnect: () => void;
+}) {
   return (
-    <div className={`${glassCard} p-8 text-center`}>
-      <p className="text-sm uppercase tracking-[0.28em] text-amber-100/70">Host portal</p>
-      <h2 className="mt-3 text-2xl font-semibold tracking-tight">Connect your wallet to continue</h2>
-      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-stone-400">
-        The host portal requires a verified host wallet. Connect Freighter to check your access.
-      </p>
-      <button
-        onClick={onConnect}
-        className="mt-6 rounded-full bg-amber-300 px-8 py-3 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/15 transition-all duration-200 hover:bg-amber-200"
-      >
-        Connect Wallet
-      </button>
+    <div className={`${glassCard} p-8 sm:p-12 text-center max-w-2xl mx-auto space-y-6`}>
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-400/10 border border-amber-400/20 text-amber-300">
+        <Wallet className="h-8 w-8" />
+      </div>
+
+      <div className="space-y-2">
+        <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-300">
+          Yêu cầu xác thực
+        </span>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white text-balance">
+          Kết nối ví chủ nhà của bạn
+        </h2>
+        <p className="mx-auto max-w-md text-xs sm:text-sm leading-relaxed text-stone-400">
+          Cổng thông tin chủ nhà StayLock hoạt động hoàn toàn phi lưu ký (non-custodial). Ví Freighter
+          của bạn chính là định danh chủ nhà và nơi nhận giải ngân ký quỹ trực tiếp.
+        </p>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <button
+          onClick={onConnect}
+          className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 px-8 py-3.5 text-xs font-semibold text-stone-950 shadow-lg shadow-amber-500/20 transition-all hover:brightness-105 active:scale-[0.98]"
+        >
+          <Wallet className="h-4 w-4" />
+          <span>Kết nối ví Freighter</span>
+        </button>
+
+        <button
+          onClick={onDemoConnect}
+          className="inline-flex items-center gap-2 rounded-2xl border border-white/[0.12] bg-white/[0.04] px-6 py-3.5 text-xs font-semibold text-stone-300 hover:bg-white/[0.08] hover:text-white transition-all"
+        >
+          <span>Dùng ví chủ nhà mẫu (Demo Host)</span>
+        </button>
+      </div>
+
+      <div className="border-t border-white/[0.06] pt-6 flex items-center justify-center gap-6 text-[11px] text-stone-500">
+        <span>Không cần mật khẩu</span>
+        <span>&middot;</span>
+        <span>100% phi lưu ký</span>
+        <span>&middot;</span>
+        <span>Giải ngân trực tiếp</span>
+      </div>
     </div>
   );
 }
@@ -122,7 +179,6 @@ function HostAccessDenied({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Clean up timers on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -135,7 +191,6 @@ function HostAccessDenied({
     setReviewState("reviewing");
     setProgress(0);
 
-    // Animate progress bar over the review duration
     const startTime = Date.now();
     intervalRef.current = setInterval(() => {
       const elapsed = Date.now() - startTime;
@@ -143,30 +198,30 @@ function HostAccessDenied({
       setProgress(pct);
     }, 200);
 
-    // Auto-approve after the review duration
     timerRef.current = setTimeout(() => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       setProgress(100);
       setReviewState("approved");
-      // Brief pause on 100% before transitioning
       setTimeout(onApproved, 1200);
     }, REVIEW_DURATION_MS);
   }
 
   if (reviewState === "approved") {
     return (
-      <div className={`${glassCard} p-8 text-center`}>
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-300/30 bg-emerald-300/15 text-3xl">
-          ✓
+      <div className={`${glassCard} p-8 sm:p-12 text-center max-w-xl mx-auto space-y-5`}>
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-400/40 bg-emerald-500/20 text-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.3)]">
+          <Check className="h-8 w-8" />
         </div>
-        <p className="mt-5 text-xs uppercase tracking-widest text-emerald-300/70">Approved</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight">Host access granted</h2>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-stone-400">
-          You can now create escrow-backed listings and manage reservations. Opening your host
-          workspace…
+        <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+          Xác thực hoàn tất
+        </span>
+        <h2 className="text-2xl font-bold tracking-tight text-white">Quyền chủ nhà đã được cấp</h2>
+        <p className="mx-auto max-w-md text-xs sm:text-sm leading-relaxed text-stone-400">
+          Ví của bạn đã được đăng ký thành công vào danh bạ chủ nhà StayLock. Đang khởi tạo không gian
+          quản lý...
         </p>
-        <div className="mx-auto mt-6 h-1 w-48 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full w-full animate-pulse rounded-full bg-emerald-300" />
+        <div className="mx-auto mt-4 h-1.5 w-48 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full w-full rounded-full bg-emerald-400 animate-pulse" />
         </div>
       </div>
     );
@@ -174,60 +229,71 @@ function HostAccessDenied({
 
   if (reviewState === "reviewing") {
     return (
-      <div className={`${glassCard} p-8`}>
-        <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-start sm:text-left">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-amber-200/20 bg-amber-200/10">
-            <span className="animate-spin text-xl">⟳</span>
+      <div className={`${glassCard} p-6 sm:p-8 max-w-2xl mx-auto space-y-6`}>
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-amber-400/30 bg-amber-400/10 text-amber-300">
+            <RefreshCw className="h-7 w-7 animate-spin" />
           </div>
           <div>
-            <p className="text-xs uppercase tracking-widest text-amber-100/70">Under review</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight">Reviewing your application</h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-stone-400">
-              We&apos;re verifying your wallet and reviewing your host application. This typically
-              takes a moment. You&apos;ll be notified as soon as your access is confirmed.
+            <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-300">
+              Đang kiểm tra hồ sơ
+            </span>
+            <h2 className="mt-1 text-2xl font-bold tracking-tight text-white">
+              Đang xác minh thông tin chủ nhà
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-stone-400">
+              Đang xác minh chữ ký ví trên sổ cái Stellar và kiểm tra điều kiện niêm yết phòng. Quy
+              trình mô phỏng sẽ hoàn tất trong giây lát.
             </p>
           </div>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-amber-200/15 bg-amber-200/[0.06] p-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] font-mono text-xs text-stone-400">
+        {/* Khung tiến độ */}
+        <div className="rounded-2xl border border-white/[0.08] bg-black/40 p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] font-mono text-xs text-amber-300">
                 {shortAddress(address).slice(0, 4)}
-              </div>
+              </span>
               <div>
-                <p className="text-xs text-stone-500">Applicant wallet</p>
-                <p className="font-mono text-sm text-stone-200">{shortAddress(address)}</p>
+                <p className="text-[10px] uppercase tracking-wider text-stone-500">Ví ứng viên</p>
+                <p className="font-mono text-xs text-stone-200">{shortAddress(address)}</p>
               </div>
             </div>
-            <span className="rounded-full border border-amber-200/30 bg-amber-200/10 px-3 py-1.5 text-xs font-semibold text-amber-100">
-              In review
+            <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
+              Hoàn thành {Math.round(progress)}%
             </span>
           </div>
 
-          <div className="mt-5">
-            <div className="flex items-center justify-between text-xs text-stone-500">
-              <span>Verification progress</span>
-              <span>{Math.round(progress)}%</span>
-            </div>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-300 to-amber-100 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+          {/* Thanh phần trăm */}
+          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-200 transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
           </div>
 
-          <div className="mt-5 space-y-2">
+          {/* Các mục kiểm tra */}
+          <div className="space-y-2 pt-2 border-t border-white/[0.06]">
             {[
-              ["Wallet signature verified", progress > 15],
-              ["Identity check in progress", progress > 40],
-              ["Property eligibility review", progress > 65],
-              ["Host profile preparation", progress > 85],
+              ["Xác thực chữ ký mật mã ví thành công", progress > 15],
+              ["Kiểm tra tài khoản mạng Stellar Testnet", progress > 40],
+              ["Đăng ký người thụ hưởng hợp đồng ký quỹ", progress > 65],
+              ["Hoàn tất thông tin chủ nhà được xác thực", progress > 85],
             ].map(([label, done]) => (
-              <div key={label as string} className="flex items-center gap-3 text-xs">
-                <span className={`h-1.5 w-1.5 rounded-full ${done ? "bg-emerald-300" : "bg-stone-600"}`} />
-                <span className={done ? "text-stone-300" : "text-stone-600"}>{label as string}</span>
+              <div key={label as string} className="flex items-center gap-2.5 text-xs">
+                <span
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                    done
+                      ? "bg-emerald-400 text-stone-950 font-bold"
+                      : "bg-white/[0.06] text-stone-600"
+                  }`}
+                >
+                  {done ? "✓" : "·"}
+                </span>
+                <span className={done ? "text-stone-200 font-medium" : "text-stone-500"}>
+                  {label as string}
+                </span>
               </div>
             ))}
           </div>
@@ -236,113 +302,179 @@ function HostAccessDenied({
     );
   }
 
-  // idle state
+  // Trạng thái chờ xin cấp quyền
   return (
-    <div className={`${glassCard} p-8`}>
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-rose-300/20 bg-rose-300/10 text-2xl">
-          ⊘
+    <div className={`${glassCard} p-6 sm:p-8 space-y-6 max-w-4xl mx-auto`}>
+      <div className="flex flex-col sm:flex-row items-start gap-5">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-rose-400/30 bg-rose-500/10 text-rose-300">
+          <AlertCircle className="h-6 w-6" />
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-widest text-rose-300/70">Access restricted</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight">Host access required</h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-stone-400">
-            The wallet <span className="font-mono text-stone-200">{shortAddress(address)}</span> is
-            not registered as a verified host. Host access is curated to maintain marketplace
-            quality.
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="rounded-full border border-rose-400/30 bg-rose-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-rose-300">
+              Yêu cầu quyền chủ nhà
+            </span>
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight text-white text-balance">
+            Đăng ký làm chủ nhà được xác thực
+          </h2>
+          <p className="text-xs sm:text-sm leading-relaxed text-stone-400 max-w-2xl">
+            Địa chỉ ví <span className="font-mono text-stone-200">{shortAddress(address)}</span>{" "}
+            hiện chưa có trong danh bạ chủ nhà đã được xác thực. Hãy đăng ký ngay bên dưới để mở khóa tính
+            năng đăng phòng và nhận giải ngân cọc tự động.
           </p>
-          <div className="mt-5 flex flex-wrap gap-3">
+
+          <div className="flex flex-wrap gap-3 pt-2">
+            <button
+              onClick={handleRequestAccess}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 px-6 py-2.5 text-xs font-bold text-stone-950 shadow-md shadow-amber-500/20 transition hover:brightness-105 active:scale-[0.98]"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Yêu cầu xác thực chủ nhà tức thì</span>
+            </button>
             <Link
               href="/marketplace"
-              className="rounded-full bg-amber-300 px-6 py-2.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/15 transition-all duration-200 hover:bg-amber-200"
+              className="flex items-center gap-2 rounded-xl border border-white/[0.1] bg-white/[0.04] px-5 py-2.5 text-xs font-medium text-stone-300 transition hover:bg-white/[0.08] hover:text-white"
             >
-              Browse as Guest
+              <Compass className="h-3.5 w-3.5" />
+              <span>Xem dưới tư cách khách du lịch</span>
             </Link>
-            <a
-              href="#apply"
-              className="rounded-full border border-white/10 bg-white/[0.06] px-6 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:bg-white/[0.1]"
-            >
-              Apply to Host
-            </a>
           </div>
         </div>
       </div>
 
-      <div id="apply" className="mt-8 rounded-2xl border border-amber-200/15 bg-amber-200/[0.06] p-6">
-        <p className="text-xs uppercase tracking-widest text-amber-100/70">Become a host</p>
-        <h3 className="mt-2 text-xl font-semibold tracking-tight">Apply for host access</h3>
-        <p className="mt-3 max-w-xl text-sm leading-6 text-stone-400">
-          StayLock hosts are verified wallet owners who list escrow-backed properties. Host status
-          is granted after review to ensure marketplace quality and guest trust.
-        </p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          {[
-            ["01", "Submit your wallet", "Your Stellar wallet becomes your host identity — no accounts needed."],
-            ["02", "Verification review", "The StayLock team reviews your application and property details."],
-            ["03", "Start listing", "Once verified, create escrow-backed listings guests can trust."],
-          ].map(([num, title, desc]) => (
-            <div key={num} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-xs font-black text-amber-100/70">{num}</p>
-              <p className="mt-2 font-bold text-white">{title}</p>
-              <p className="mt-1 text-xs leading-5 text-stone-500">{desc}</p>
-            </div>
-          ))}
+      {/* 3 Lợi ích nổi bật */}
+      <div className="grid gap-4 sm:grid-cols-3 border-t border-white/[0.06] pt-6">
+        <div className="rounded-xl border border-white/[0.06] bg-black/30 p-4 space-y-1.5">
+          <div className="flex items-center gap-2 text-amber-300 text-xs font-semibold">
+            <Wallet className="h-4 w-4" />
+            <span>01. Định danh bằng ví</span>
+          </div>
+          <p className="text-xs text-stone-400 leading-relaxed">
+            Ví Stellar chính là hồ sơ chủ nhà của bạn. Không cần tài khoản, mật khẩu hay thủ tục rườm rà.
+          </p>
         </div>
-        <div className="mt-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/25 p-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] font-mono text-xs text-stone-400">
-            {shortAddress(address).slice(0, 4)}
+
+        <div className="rounded-xl border border-white/[0.06] bg-black/30 p-4 space-y-1.5">
+          <div className="flex items-center gap-2 text-amber-300 text-xs font-semibold">
+            <Lock className="h-4 w-4" />
+            <span>02. Tiền cọc được bảo chứng</span>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs text-stone-500">Your wallet</p>
-            <p className="mt-0.5 truncate font-mono text-sm text-stone-200">{address}</p>
+          <p className="text-xs text-stone-400 leading-relaxed">
+            Tiền đặt cọc của khách được khóa an toàn trong hợp đồng thông minh, hoàn toàn không lo quỵt tiền.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-white/[0.06] bg-black/30 p-4 space-y-1.5">
+          <div className="flex items-center gap-2 text-amber-300 text-xs font-semibold">
+            <CheckCircle2 className="h-4 w-4" />
+            <span>03. Quyết toán 0% phí</span>
           </div>
-          <button
-            onClick={handleRequestAccess}
-            className="ml-auto shrink-0 rounded-full border border-amber-200/20 bg-amber-200/10 px-4 py-2 text-xs font-bold text-amber-100 transition hover:bg-amber-200/20"
-          >
-            Request Access
-          </button>
+          <p className="text-xs text-stone-400 leading-relaxed">
+            Tiền chuyển thẳng về ví của bạn ngay khi khách trả phòng, giữ trọn 100% doanh thu.
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Host content ─────────────────────────────────────────────────────────────
+// ─── Nội dung khu vực chủ nhà ─────────────────────────────────────────────────────────────
 
 type HostContentProps = {
   address: string;
   booking: ReturnType<typeof useBooking>;
   activeEscrow: ReturnType<typeof useEscrow>;
-  ownedListings: ReturnType<typeof useListings>;
+  ownedListings: Listing[];
   trackReservation: () => void;
 };
 
-function HostContent({ address, booking, activeEscrow, ownedListings, trackReservation }: HostContentProps) {
-  return (
-    <>
-      <CreateListingForm address={address} />
+function HostContent({
+  address,
+  booking,
+  activeEscrow,
+  ownedListings,
+  trackReservation,
+}: HostContentProps) {
+  const pendingReservationsCount = ownedListings.filter(
+    (l) => l.availability === "Reserved" || l.availability === "Completed"
+  ).length;
 
-      <section id="listings" className="space-y-5">
-        <div className="max-w-3xl">
-          <p className="text-xs uppercase tracking-widest text-amber-100/70">Your listings</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-            Active property inventory
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-400">
-            Live occupancy state for all properties you own. Reserved listings are locked until the
-            guest checks in or cancels.
+  return (
+    <div className="space-y-8">
+      {/* Khung thống kê chỉ số chủ nhà */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e15]/80 p-5 shadow-lg backdrop-blur-xl">
+          <div className="flex items-center justify-between text-stone-400 text-xs">
+            <span>Phòng đang niêm yết</span>
+            <Building2 className="h-4 w-4 text-amber-400" />
+          </div>
+          <p className="mt-2 text-3xl font-bold text-white tracking-tight">
+            {ownedListings.length}
+          </p>
+          <p className="mt-1 text-[11px] text-stone-500">Đang hiển thị trên thị trường</p>
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e15]/80 p-5 shadow-lg backdrop-blur-xl">
+          <div className="flex items-center justify-between text-stone-400 text-xs">
+            <span>Đặt phòng đang xử lý</span>
+            <Lock className="h-4 w-4 text-amber-400" />
+          </div>
+          <p className="mt-2 text-3xl font-bold text-white tracking-tight">
+            {pendingReservationsCount}
+          </p>
+          <p className="mt-1 text-[11px] text-stone-500">Chờ nhận phòng / giải ngân</p>
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e15]/80 p-5 shadow-lg backdrop-blur-xl">
+          <div className="flex items-center justify-between text-stone-400 text-xs">
+            <span>Chứng nhận uy tín</span>
+            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-xl font-bold text-emerald-300">Chủ nhà Xác thực</span>
+            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          </div>
+          <p className="mt-1 font-mono text-[11px] text-stone-500 truncate">
+            {shortAddress(address)}
           </p>
         </div>
+
+        <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e15]/80 p-5 shadow-lg backdrop-blur-xl">
+          <div className="flex items-center justify-between text-stone-400 text-xs">
+            <span>Hoa hồng nền tảng</span>
+            <Sparkles className="h-4 w-4 text-amber-400" />
+          </div>
+          <p className="mt-2 text-3xl font-bold text-emerald-400 tracking-tight">0.00%</p>
+          <p className="mt-1 text-[11px] text-stone-500">100% doanh thu về thẳng ví chủ nhà</p>
+        </div>
+      </div>
+
+      {/* Form tạo tin phòng mới */}
+      <CreateListingForm address={address} />
+
+      {/* Danh sách phòng sở hữu */}
+      <section id="listings" className="space-y-5">
+        <div>
+          <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+            Kho chỗ nghỉ của bạn
+          </span>
+          <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-white">
+            Danh sách phòng của bạn ({ownedListings.length})
+          </h2>
+          <p className="mt-1 text-xs leading-relaxed text-stone-400 max-w-2xl">
+            Các phòng do ví của bạn sở hữu. Khi khách đặt phòng, khoản tiền ký quỹ sẽ được hợp đồng
+            Soroban tự động bảo chứng.
+          </p>
+        </div>
+
         {ownedListings.length === 0 ? (
-          <div className={`${glassCard} p-7`}>
-            <p className="text-xs uppercase tracking-widest text-stone-500">No listings yet</p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight">
-              Create your first listing above
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-stone-400">
-              Once you publish a listing it will appear here and immediately become available in the
-              guest marketplace.
+          <div className={`${glassCard} p-10 text-center space-y-3`}>
+            <Building2 className="mx-auto h-8 w-8 text-stone-600" />
+            <h3 className="text-base font-semibold text-stone-200">Chưa có chỗ nghỉ nào được tạo</h3>
+            <p className="text-xs text-stone-500 max-w-md mx-auto">
+              Sử dụng biểu mẫu phía trên để niêm yết phòng đầu tiên. Phòng sẽ xuất hiện ngay lập tức trên
+              thị trường du lịch.
             </p>
           </div>
         ) : (
@@ -350,22 +482,30 @@ function HostContent({ address, booking, activeEscrow, ownedListings, trackReser
         )}
       </section>
 
+      {/* Hàng đợi khách đặt phòng */}
       <section id="reservations" className="space-y-5">
-        <div className="max-w-3xl">
-          <p className="text-xs uppercase tracking-widest text-amber-100/70">Reservation management</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-            Manage active stays
+        <div>
+          <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+            Quản lý lưu trú
+          </span>
+          <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-white">
+            Khách đặt phòng &amp; quyết toán ký quỹ
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-400">
-            Look up a reservation by booking ID to review its on-chain state and complete the stay
-            once the guest has checked in.
+          <p className="mt-1 text-xs leading-relaxed text-stone-400 max-w-2xl">
+            Chọn một lượt đặt phòng từ hàng đợi để kiểm tra trạng thái trên chuỗi và kích hoạt giải ngân
+            tiền cọc khi khách trả phòng.
           </p>
         </div>
+
         <HostReservationQueue
           ownedListings={ownedListings}
           activeBookingId={booking.bookingId}
-          onLoad={(id) => { booking.setBookingId(id); void booking.refreshBooking(id); }}
+          onLoad={(id) => {
+            booking.setBookingId(id);
+            void booking.refreshBooking(id);
+          }}
         />
+
         <ReservationLookup
           bookingId={booking.bookingId}
           setBookingId={booking.setBookingId}
@@ -377,6 +517,7 @@ function HostContent({ address, booking, activeEscrow, ownedListings, trackReser
         />
       </section>
 
+      {/* Bảng điều khiển vòng đời giải ngân */}
       <EscrowLifecycle
         bookingId={booking.bookingId}
         lifecycleStatus={activeEscrow.lifecycleStatus}
@@ -389,75 +530,90 @@ function HostContent({ address, booking, activeEscrow, ownedListings, trackReser
         completeStay={activeEscrow.completeStay}
         cancelReservation={activeEscrow.cancelReservation}
       />
-    </>
+    </div>
   );
 }
 
-// ─── Host reservation queue ───────────────────────────────────────────────────
+// ─── Hàng đợi đặt phòng của chủ nhà ───────────────────────────────────────────────────
 
 type HostReservationQueueProps = {
-  ownedListings: ReturnType<typeof useListings>;
+  ownedListings: Listing[];
   activeBookingId: string;
   onLoad: (bookingId: string) => void;
 };
 
-function HostReservationQueue({ ownedListings, activeBookingId, onLoad }: HostReservationQueueProps) {
+function HostReservationQueue({
+  ownedListings,
+  activeBookingId,
+  onLoad,
+}: HostReservationQueueProps) {
   const pendingReservations = ownedListings.filter(
-    (l) => l.activeBookingId && (l.availability === "Reserved" || l.availability === "Completed"),
+    (l) => l.activeBookingId && (l.availability === "Reserved" || l.availability === "Completed")
   );
 
   if (pendingReservations.length === 0) {
     return (
-      <div className={`${glassCard} p-5 sm:p-6`}>
+      <div className={`${glassCard} p-6`}>
         <div className="flex items-center gap-3">
-          <span className="h-1.5 w-1.5 rounded-full bg-stone-600" />
-          <p className="text-sm text-stone-500">No active reservations on your listings yet.</p>
+          <Clock className="h-4 w-4 text-stone-500" />
+          <p className="text-xs text-stone-400">
+            Hiện chưa có khách đặt phòng nào đang chờ xử lý trên các phòng của bạn.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`${glassCard} p-5 sm:p-6`}>
-      <p className="text-xs uppercase tracking-widest text-amber-100/70">Incoming reservations</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div className={`${glassCard} p-6 space-y-4`}>
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-wider text-amber-300 font-bold">
+          Hàng đợi khách đang đặt ({pendingReservations.length})
+        </p>
+        <span className="text-xs text-stone-500">Nhấn &ldquo;Kích hoạt xử lý&rdquo; để quản lý quyết toán</span>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {pendingReservations.map((listing) => {
           const isLoaded = activeBookingId === listing.activeBookingId;
           const isCompleted = listing.availability === "Completed";
+
           return (
             <div
               key={listing.id}
-              className={`rounded-xl border p-4 transition-all duration-200 ${
+              className={`rounded-2xl border p-4.5 transition-all duration-200 ${
                 isLoaded
-                  ? "border-amber-200/35 bg-amber-200/10"
-                  : "border-white/10 bg-white/[0.04]"
+                  ? "border-amber-400/50 bg-amber-400/10 shadow-lg ring-1 ring-amber-400/40"
+                  : "border-white/[0.08] bg-black/40 hover:border-white/[0.14]"
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-white">{listing.title}</p>
-                  <p className="mt-0.5 truncate text-xs text-stone-500">{listing.location}</p>
+                  <p className="truncate text-sm font-bold text-white">{listing.title}</p>
+                  <p className="mt-0.5 truncate text-xs text-stone-400">{listing.location}</p>
                 </div>
                 <span
-                  className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                  className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${
                     isCompleted
                       ? "border-stone-500/30 bg-stone-500/10 text-stone-400"
-                      : "border-amber-200/30 bg-amber-200/10 text-amber-100"
+                      : "border-amber-400/30 bg-amber-400/10 text-amber-200"
                   }`}
                 >
-                  {isCompleted ? "Completed" : "Reserved"}
+                  {isCompleted ? "Đã xong" : "Đã đặt cọc"}
                 </span>
               </div>
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="font-mono text-xs text-stone-500">
+
+              <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-3">
+                <span className="font-mono text-xs text-stone-400">
                   #{listing.activeBookingId}
-                </p>
+                </span>
+
                 <button
                   onClick={() => onLoad(listing.activeBookingId!)}
                   disabled={isLoaded}
-                  className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1.5 text-xs font-semibold text-amber-100 transition hover:bg-amber-200/20 disabled:cursor-default disabled:opacity-50"
+                  className="rounded-xl border border-amber-400/30 bg-amber-400/15 px-3 py-1.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-400/25 disabled:cursor-default disabled:opacity-50"
                 >
-                  {isLoaded ? "Loaded" : "Load"}
+                  {isLoaded ? "Đang chọn" : "Kích hoạt xử lý"}
                 </button>
               </div>
             </div>
@@ -468,7 +624,7 @@ function HostReservationQueue({ ownedListings, activeBookingId, onLoad }: HostRe
   );
 }
 
-// ─── Create listing form ──────────────────────────────────────────────────────
+// ─── Form tạo tin phòng mới ─────────────────────────────────────────────────────────
 
 function xlmToStroops(xlm: string): string {
   try {
@@ -495,17 +651,17 @@ function CreateListingForm({ address }: { address: string }) {
     if (isPublishing) return;
     setError("");
     if (!title.trim() || !location.trim() || !nightly || !deposit || !description.trim()) {
-      setError("Fill in all required fields.");
+      setError("Vui lòng điền đầy đủ tất cả các trường bắt buộc.");
       return;
     }
     const nightlyNum = parseFloat(nightly);
     if (isNaN(nightlyNum) || nightlyNum <= 0) {
-      setError("Enter a valid nightly price.");
+      setError("Vui lòng nhập giá phòng hợp lệ tính bằng XLM.");
       return;
     }
     const escrowAmount = xlmToStroops(deposit);
     if (!escrowAmount) {
-      setError("Enter a valid escrow deposit amount.");
+      setError("Vui lòng nhập số tiền cọc ký quỹ hợp lệ tính bằng XLM.");
       return;
     }
 
@@ -529,100 +685,113 @@ function CreateListingForm({ address }: { address: string }) {
       setDeposit("");
       setDescription("");
       setHostName("");
-      setTimeout(() => setSubmitted(false), 4000);
+      setTimeout(() => setSubmitted(false), 5000);
     } catch (err) {
       console.error("Failed to publish listing", err);
-      setError("Unable to publish listing. Check Supabase configuration and try again.");
+      setError("Không thể đăng phòng. Vui lòng kiểm tra kết nối cơ sở dữ liệu và thử lại.");
     } finally {
       setIsPublishing(false);
     }
   }
 
   return (
-    <section id="create" className={`${glassCard} p-5 sm:p-7`}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section id="create" className={`${glassCard} p-6 sm:p-8 space-y-6`}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-widest text-amber-100/70">New listing</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight">Create a listing</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-400">
-            Your connected wallet is automatically set as the listing owner and escrow recipient. No
-            manual address entry required.
+          <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+            Cổng đăng tin
+          </span>
+          <h2 className="mt-1.5 text-2xl font-bold tracking-tight text-white">
+            Niêm yết chỗ nghỉ ký quỹ thông minh
+          </h2>
+          <p className="mt-1 text-xs leading-relaxed text-stone-400 max-w-2xl">
+            Đăng chỗ nghỉ mới lên thị trường phi tập trung. Địa chỉ ví của bạn sẽ tự động được cấu
+            hình làm người nhận tiền ký quỹ khi kỳ nghỉ hoàn tất.
           </p>
         </div>
+
         {submitted && (
-          <span className="w-fit rounded-full border border-emerald-300/30 bg-emerald-300/10 px-4 py-2 text-xs font-semibold text-emerald-100">
-            Published to marketplace
+          <span className="flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-200 shadow-sm">
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            Đã đăng thành công lên thị trường
           </span>
         )}
       </div>
 
-      <div className="mt-5 rounded-xl border border-white/10 bg-black/20 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-          <p className="text-xs text-stone-400">
-            Listing owner: <span className="font-mono text-stone-200">{shortAddress(address)}</span>
-          </p>
+      {/* Thông tin ví chủ sở hữu */}
+      <div className="rounded-xl border border-white/[0.06] bg-black/40 px-4 py-3 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          <span className="text-stone-400">Ví chủ nhà thụ hưởng:</span>
+          <span className="font-mono text-stone-200">{shortAddress(address)}</span>
         </div>
+        <span className="text-[11px] text-stone-500">Tự động cấu hình</span>
       </div>
 
-      <div className="mt-6 grid gap-5 md:grid-cols-2">
+      {/* Lưới các trường nhập liệu */}
+      <div className="grid gap-5 md:grid-cols-2">
         <label className="block md:col-span-2">
-          <FieldLabel label="Property Title" hint="required" />
+          <FieldLabel label="Tên biệt thự / chỗ nghỉ" hint="bắt buộc" required />
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Amalfi Glass Villa"
+            placeholder="Ví dụ: Biệt thự biển Mỹ Khê"
             className={inputClass}
           />
         </label>
+
         <label className="block">
-          <FieldLabel label="Location" hint="required" />
+          <FieldLabel label="Địa điểm / thành phố" hint="thành phố, tỉnh" required />
           <input
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="Amalfi Coast, Italy"
+            placeholder="Ví dụ: Sơn Trà, Đà Nẵng, Việt Nam"
             className={inputClass}
           />
         </label>
+
         <label className="block">
-          <FieldLabel label="Host / Property Name" hint="optional" />
+          <FieldLabel label="Tên thương hiệu / chủ nhà" hint="tùy chọn" />
           <input
             value={hostName}
             onChange={(e) => setHostName(e.target.value)}
-            placeholder="Casa Meridian"
+            placeholder="Ví dụ: Danang Coastal Stays"
             className={inputClass}
           />
         </label>
+
         <label className="block">
-          <FieldLabel label="Nightly Price" hint="XLM" />
+          <FieldLabel label="Giá thuê mỗi đêm (XLM)" hint="số lượng" required />
           <input
             type="number"
             min="0"
             step="0.01"
             value={nightly}
             onChange={(e) => setNightly(e.target.value)}
-            placeholder="12.5"
+            placeholder="15.0"
             className={inputClass}
           />
         </label>
+
         <label className="block">
-          <FieldLabel label="Escrow Deposit" hint="XLM" />
+          <FieldLabel label="Tiền cọc ký quỹ yêu cầu (XLM)" hint="khóa on-chain" required />
           <input
             type="number"
             min="0"
             step="0.01"
             value={deposit}
             onChange={(e) => setDeposit(e.target.value)}
-            placeholder="12.5"
+            placeholder="15.0"
             className={inputClass}
           />
         </label>
+
         <label className="block md:col-span-2">
-          <FieldLabel label="Description" hint="required" />
+          <FieldLabel label="Mô tả chỗ nghỉ &amp; điểm nổi bật" hint="bắt buộc" required />
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe the property, its highlights, and what makes it special..."
+            placeholder="Mô tả các đặc điểm nổi bật, tầm nhìn biển, tiện ích sang trọng và trải nghiệm độc đáo..."
             rows={3}
             className={`${inputClass} resize-none`}
           />
@@ -630,17 +799,28 @@ function CreateListingForm({ address }: { address: string }) {
       </div>
 
       {error && (
-        <p className="mt-4 rounded-2xl border border-rose-300/20 bg-rose-300/10 px-4 py-3 text-sm text-rose-200">
-          {error}
-        </p>
+        <div className="flex items-center gap-2 rounded-xl border border-rose-400/30 bg-rose-500/10 p-3.5 text-xs text-rose-200">
+          <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+          <span>{error}</span>
+        </div>
       )}
 
       <button
         onClick={handleCreate}
         disabled={isPublishing}
-        className="mt-6 w-full rounded-xl bg-amber-300 px-8 py-3.5 text-sm font-semibold text-stone-950 shadow-lg shadow-amber-500/15 transition-all duration-200 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 py-3.5 text-xs font-bold text-stone-950 shadow-lg shadow-amber-500/20 transition-all hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isPublishing ? "Publishing Listing..." : "Publish Listing to Marketplace"}
+        {isPublishing ? (
+          <>
+            <span className="h-4 w-4 rounded-full border-2 border-stone-950 border-t-transparent animate-spin" />
+            <span>Đang xuất bản lên thị trường &amp; sổ cái...</span>
+          </>
+        ) : (
+          <>
+            <PlusCircle className="h-4 w-4" />
+            <span>Đăng chỗ nghỉ lên thị trường</span>
+          </>
+        )}
       </button>
     </section>
   );

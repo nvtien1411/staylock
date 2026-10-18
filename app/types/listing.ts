@@ -19,4 +19,7 @@ export type Listing = {
   activeBookingId?: string;
   gradientFrom: string;
   gradientTo: string;
+  imageUrl?: string;
+  rating?: number;
+  reviewCount?: number;
 };

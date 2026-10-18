@@ -6,10 +6,10 @@ export function ActivityFeed() {
     <section id="activity" className={`${glassCard} p-5 sm:p-6`}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.28em] text-stone-500">Activity</p>
-          <h2 className="mt-2 text-3xl font-black tracking-tight">Live network confidence</h2>
+          <p className="text-xs uppercase tracking-wider text-stone-500 font-semibold">Hoạt động mạng lưới</p>
+          <h2 className="mt-2 text-3xl font-black tracking-tight">Bảo chứng ký quỹ thời gian thực</h2>
         </div>
-        <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-xs font-semibold text-emerald-100">Realtime-style feed</span>
+        <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-xs font-semibold text-emerald-100">Dữ liệu trực tiếp</span>
       </div>
       <div className="mt-5 grid gap-3 lg:grid-cols-2">
         {activity.map(([title, detail, meta]) => (

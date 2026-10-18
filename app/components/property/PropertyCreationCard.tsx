@@ -1,6 +1,7 @@
 import { FieldLabel } from "@/app/components/ui/FieldLabel";
 import { glassCard, inputClass } from "@/app/components/ui/constants";
 import { getExplorerUrl, statusMessage } from "@/app/lib/soroban/format";
+import { PlusCircle, ExternalLink, ShieldCheck } from "lucide-react";
 
 type PropertyCreationCardProps = {
   propertyName: string;
@@ -24,38 +25,60 @@ export function PropertyCreationCard({
   const propertyExplorerUrl = getExplorerUrl(propertyResult?.transactionHash);
 
   return (
-    <section className={`${glassCard} p-5 sm:p-7`}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section className={`${glassCard} p-6 sm:p-7 space-y-6`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-stone-500">Property creation</p>
-          <h3 className="mt-2 text-3xl font-black tracking-tight">Create your first property</h3>
-          <p className="mt-3 text-sm leading-6 text-stone-400">Add a stay guests can reserve with a protected deposit and a premium trust experience.</p>
+          <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300">
+            Đăng ký chỗ nghỉ
+          </span>
+          <h3 className="mt-1 text-2xl font-bold tracking-tight text-white">
+            Niêm yết phòng trên sổ cái on-chain
+          </h3>
+          <p className="mt-1 text-xs leading-relaxed text-stone-400">
+            Thêm phòng hoặc biệt thự được bảo chứng bằng hợp đồng ký quỹ thông minh Soroban.
+          </p>
         </div>
-        <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${propertyTone.color}`}>{propertyTone.label}</span>
+        <span className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${propertyTone.color}`}>
+          {propertyTone.label}
+        </span>
       </div>
 
-      <div className="mt-7 grid gap-5 md:grid-cols-[1fr_auto] md:items-end">
+      <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
         <label className="block">
-          <FieldLabel label="Property Name" hint="listing" />
-          <input value={propertyName} onChange={(event) => setPropertyName(event.target.value)} placeholder="Amalfi Glass Villa" className={inputClass} />
+          <FieldLabel label="Tên phòng / biệt thự" hint="tiêu đề niêm yết" required />
+          <input
+            value={propertyName}
+            onChange={(event) => setPropertyName(event.target.value)}
+            placeholder="Ví dụ: Biệt thự biển Mỹ Khê"
+            className={inputClass}
+          />
         </label>
         <button
           onClick={createRoom}
           disabled={isCreatingProperty}
-          className="rounded-2xl border border-amber-200/20 bg-amber-200/10 px-6 py-3.5 text-sm font-bold text-amber-50 transition-all duration-300 hover:-translate-y-1 hover:border-amber-100/50 hover:bg-amber-200/20 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 px-6 py-3 text-xs font-semibold text-stone-950 shadow-md shadow-amber-500/20 transition hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isCreatingProperty ? "Publishing..." : "Create Property"}
+          <PlusCircle className="h-4 w-4" />
+          <span>{isCreatingProperty ? "Đang xuất bản..." : "Tạo phòng mới"}</span>
         </button>
       </div>
 
-      <div className="mt-6 rounded-3xl border border-white/10 bg-black/30 p-5">
+      <div className="rounded-2xl border border-white/[0.08] bg-black/40 p-4 space-y-3">
         <div className="flex items-center gap-3">
-          <span className={`h-3 w-3 rounded-full shadow-lg ${propertyTone.dot}`} />
-          <p className="text-sm text-stone-300">{statusMessage(propertyResult, propertyStatus)}</p>
+          <span className={`h-2.5 w-2.5 rounded-full ${propertyTone.dot}`} />
+          <p className="text-xs text-stone-200 font-medium">
+            {statusMessage(propertyResult, propertyStatus)}
+          </p>
         </div>
         {propertyExplorerUrl && (
-          <a href={propertyExplorerUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-full bg-emerald-200 px-4 py-2 text-xs font-bold text-emerald-950 transition hover:bg-emerald-100">
-            View property confirmation
+          <a
+            href={propertyExplorerUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-400/20 border border-emerald-400/30 px-3 py-1.5 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-400/30"
+          >
+            <span>Xem xác nhận phòng trên Stellar Explorer</span>
+            <ExternalLink className="h-3 w-3" />
           </a>
         )}
       </div>

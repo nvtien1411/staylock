@@ -40,7 +40,7 @@ export async function runEscrowAction(address: string, bookingId: string, contra
   });
 
   if (signed.error) {
-    throw new Error(signed.error.message || "Wallet approval was declined.");
+    throw new Error(signed.error.message || "Giao dịch đã bị từ chối phê duyệt trên ví Freighter.");
   }
 
   const signedTransaction = new Transaction(signed.signedTxXdr, NETWORK_PASSPHRASE);
